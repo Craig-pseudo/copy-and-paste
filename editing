@@ -1,426 +1,116 @@
-import {
-    setViewerDotNetReference,
-    setWorkspaceApi,
-    getWorkspaceApi,
-    handleViewerEvent,
-    dispose as disposeSharedViewer
-} from "./trimbleWorkspace.js";
+@using Vision.Components.Home.RightAsideTabs
 
-import { openViewerPopup, initialize, requestAccessToken, dispose } from "./trimbleAuth.js";
 
-/*
- * Re-exported here (not just imported) because Blazor's JS interop
- * calls _trimbleModule.InvokeAsync("functionName", ...), which reads
- * `module["functionName"]` directly off whichever file
- * TrimbleModulePath points at. An imported-but-not-re-exported
- * binding is not reachable that way - it has to be a genuine export
- * of *this* file.
- */
-// export {
-//     setElementColors,
-//     selectUnmatchedTrimbleObjects,
-//     selectTrimbleObject,
-//     clearViewerSelection,
-//     getAllFlattenedObjects,
-//     // getAllLoadedObjects,
-//     getFlattenedObjectByRuntimeId,
-//     getSelection,
-//     zoomToSelection
-// } from "./trimbleWorkspace.js";
+@inject IJSRuntime JS
 
-export { openViewerPopup, initialize, requestAccessToken, dispose };
- 
-/**
- * Initializes the embedded Trimble Connect viewer.
- *
- * @param {HTMLIFrameElement} iframeElement
- * @param {string} accessToken
- * @param {string} projectId
- * @returns {Promise<boolean>}
- */
-export async function initializeViewer(
-    iframeElement,
-    accessToken,
-    projectId,
-    modelId,
-    dashboardReference
-) {
-    if (!(iframeElement instanceof HTMLIFrameElement)) {
-        console.error(
-            "[ParaMatic] A valid iframe element is required."
-        );
+<aside class="w-2/8 bg-white rounded-xl p-0 flex flex-col h-full overflow-hidden">
 
-        return false;
-    }
+    <!--This is the top selector at the top-->
+    <div class="bg-white rounded-sm">
+        <div class="grid grid-rows-3 p-3">
+            <h2>COL-CNV-012</h2>
+            <a>UC 152 x 152 x 37 Column</a>
+            <a>Area 3 - CV-300 Corridor</a>
+        </div>
 
-    if (!accessToken) {
-        console.error(
-            "[ParaMatic] An access token is required."
-        );
+        <div class="flex gap-2 py-1 px-2">
+            <div class="w-1/3 h-12 rounded-sm bg-green-200 border border-green-600 text-green-700 flex items-center justify-center">C4 - Good</div>
+            <div class="w-1/3 h-12 rounded-sm bg-green-200 border border-green-600 text-green-700 flex items-center justify-center">P4 - Low</div>
+            <div class="w-1/3 h-12 rounded-sm bg-green-200 border border-green-600 text-green-700 flex items-center justify-center">Sensor Warning</div>
+        </div>
 
-        return false;
-    }
+        <div class="px-2 pb-2">
+            <div class="grid grid-cols-2 gap-2 mt-2">
 
-    if (!projectId) {
-        console.error(
-            "[ParaMatic] A project ID is required."
-        );
+                <div class="w-full h-14 px-2 pb-2 rounded-sm border border-gray-300">
+                    <h2 class="text-gray-400">Profile</h2>
+                    <a class="text-gray-800 font-medium">152 x 152 x 37 UC</a>
+                </div>
 
-        return false;
-    }
+                <div class="w-full h-14 px-2 pb-2 rounded-sm border border-gray-300">
+                    <h2 class="text-gray-400">Mass</h2>
+                    <a class="text-gray-800 font-medium">638 Kg</a>
+                </div>
 
-    if (!window.TrimbleConnectWorkspace) {
-        console.error(
-            "[ParaMatic] TrimbleConnectWorkspace is not loaded."
-        );
+                <div class="w-full h-14 px-2 pb-2 rounded-sm border border-gray-300">
+                    <h2 class="text-gray-400">Paint Area</h2>
+                    <a class="text-gray-800 font-medium">14.6 m²</a>
+                </div>
 
-        return false;
-    }
+                <div class="w-full h-14 px-2 pb-2 rounded-sm border border-gray-300">
+                    <h2 class="text-gray-400">Length</h2>
+                    <a class="text-gray-800 font-medium">9.4 m</a>
+                </div>
 
-    setViewerDotNetReference(dashboardReference);
+            </div>
+        </div>
+    </div>
 
-    try {
-        if (!getWorkspaceApi()) {
-            await loadEmbeddedViewerIframe(iframeElement);
+    <!--This is the inspoection history-->
 
-            const connected =
-                await window.TrimbleConnectWorkspace.connect(
-                    iframeElement,
-                    handleViewerEvent,
-                    30000
-                );
+    <div class="rounded-sm flex flex-col flex-1 min-h-0 border-t border-gray-300">
 
-            setWorkspaceApi(connected);
-        }
+        <!--This is condition and telemtry and work orders-->
+        <div class="flex w-full border-b border-gray-300">
+            <button class="flex-1 py-2 @(activeTab == Tab.Condition ? "text-blue-600 font-semibold" : "")"
+                    @onclick="() => activeTab = Tab.Condition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="activity" aria-hidden="true" class="lucide lucide-activity w-[11px] h-[11px] inline-flex"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg>
+                Condition
+            </button>
+            <button class="flex-1 py-2 @(activeTab == Tab.Telemetry ? "text-blue-600 font-semibold" : "")"
+                    @onclick="() => activeTab = Tab.Telemetry">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="radio" aria-hidden="true" class="lucide lucide-radio w-[11px] h-[11px] inline-flex"><path d="M16.247 7.761a6 6 0 0 1 0 8.478"></path><path d="M19.075 4.933a10 10 0 0 1 0 14.134"></path><path d="M4.925 19.067a10 10 0 0 1 0-14.134"></path><path d="M7.753 16.239a6 6 0 0 1 0-8.478"></path><circle cx="12" cy="12" r="2"></circle></svg>
+                Telemetry
+            </button>
+            <button class="flex-1 py-2 @(activeTab == Tab.WorkOrders ? "text-blue-600 font-semibold" : "")"
+                    @onclick="() => activeTab = Tab.WorkOrders">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-text" aria-hidden="true" class="lucide lucide-file-text w-[11px] h-[11px] inline-flex"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+                Work Orders
+            </button>
+        </div>
 
-        const workspaceAPI = getWorkspaceApi();
 
-        const tokenAccepted =
-            await workspaceAPI.embed.setTokens({
-                accessToken
-            });
+        <div class="flex-1 min-h-0 overflow-hidden p-2">
 
-        if (!tokenAccepted) {
-            console.error(
-                "[ParaMatic] The embedded viewer rejected the token."
-            );
-
-            return false;
-        }
-
-        await workspaceAPI.embed.init3DViewer({
-            projectId,
-            modelId
-        });
-
-        console.log(
-            "[ParaMatic] init3DViewer completed.",
+            @if (activeTab == Tab.Condition)
             {
-                projectId,
-                modelId
+                <!--Consition - Inspection History-->
+
+                <div class="h-full overflow-y-auto">
+
+                    <Condition />
+
+                </div>
             }
-        );
+            else if (activeTab == Tab.Telemetry)
+            {
+                <!--Telemetry - displacement and vibration and the live displacement and the vibration RMS-->
 
-        await workspaceAPI.ui.setUI({
-            name: "SidePanel",
-            state: "hidden"
-        });
+                <div class="h-full overflow-y-auto">
 
-        /*
-         * Don't rely only on viewer.onModelStateChanged.
-         *
-         * init3DViewer starts the loading process but depending on timing
-         * the model-state event can be missed by the extension.
-         */
-        // await loadDashboardObjectsWhenReady(modelId);
+                    <Telemetry/>
+                    
+                </div>
+            }
+            else if (activeTab == Tab.WorkOrders)
+            {
+                <!--Work Orders -->
 
-        return true;
-    } catch (error) {
-        console.error(
-            "[ParaMatic] Embedded viewer initialization failed.",
-            error
-        );
+                <div class="h-full flex flex-col gap-3">
 
-        setWorkspaceApi(null);
+                   <WorkOrders />
 
-        return false;
-    }
-}
-
-async function loadEmbeddedViewerIframe(iframeElement) {
-    const currentSource =
-        iframeElement.getAttribute("src") ?? "";
-
-    if (
-        currentSource &&
-        currentSource !== "about:blank" &&
-        currentSource !== "#"
-    ) {
-        return;
-    }
-
-    await new Promise((resolve, reject) => {
-        const timeoutId = window.setTimeout(() => {
-            cleanup();
-
-            reject(
-                new Error(
-                    "Timed out loading the embedded Trimble viewer."
-                )
-            );
-        }, 30000);
-
-        const onLoad = () => {
-            cleanup();
-            resolve();
-        };
-
-        const onError = () => {
-            cleanup();
-
-            reject(
-                new Error(
-                    "The embedded Trimble viewer failed to load."
-                )
-            );
-        };
-
-        function cleanup() {
-            window.clearTimeout(timeoutId);
-
-            iframeElement.removeEventListener(
-                "load",
-                onLoad);
-
-            iframeElement.removeEventListener(
-                "error",
-                onError);
-        }
-
-        iframeElement.addEventListener(
-            "load",
-            onLoad,
-            { once: true });
-
-        iframeElement.addEventListener(
-            "error",
-            onError,
-            { once: true });
-
-        iframeElement.src =
-            "https://web.connect.trimble.com/?isEmbedded=true";
-    });
-}
-
-// Lazily-built, cached once per viewer session: GUID (MS) -> {modelId, runtimeId}.
-// Rebuilt (set back to null) whenever the viewer is disposed.
-let guidToObjectRef = null;
-
-/**
- * Highlights an object in the embedded 3D viewer by its GUID (MS).
- *
- * The GUID -> {modelId, runtimeId} lookup (buildGuidIndex/extractMsGuid
- * below) is built from confirmed working calls (viewer.getObjects,
- * viewer.getObjectProperties - same ones already used elsewhere in this
- * project). The actual highlight call, viewer.setSelection, is NOT yet
- * confirmed against this Trimble SDK version - it's the standard
- * documented shape ([{modelId, objectRuntimeIds}], mode), but if this
- * throws or silently does nothing, check the console error logged here
- * first and report it back before assuming something else is wrong.
- */
-export async function selectObjectByGuid(guid) {
-    const workspaceAPI = getWorkspaceApi();
-
-    if (!workspaceAPI?.viewer) {
-        console.warn("[ParaMatic] selectObjectByGuid: no active viewer connection.");
-        return false;
-    }
-
-    try {
-        if (!guidToObjectRef) {
-            console.log("[ParaMatic] Building GUID index from loaded models...");
-            guidToObjectRef = await buildGuidIndex(workspaceAPI);
-            console.log(`[ParaMatic] GUID index built: ${guidToObjectRef.size} objects.`);
-        }
-
-        const ref = guidToObjectRef.get(guid.toLowerCase());
-
-        if (!ref) {
-            console.warn(`[ParaMatic] selectObjectByGuid: no object found for GUID ${guid} in loaded models.`);
-            return false;
-        }
-
-        await workspaceAPI.viewer.setSelection(
-            [{ modelId: ref.modelId, objectRuntimeIds: [ref.runtimeId] }],
-            "set"
-        );
-
-        console.log(`[ParaMatic] Selected object ${guid} (model ${ref.modelId}, runtimeId ${ref.runtimeId}).`);
-
-        return true;
-    } catch (error) {
-        console.error(`[ParaMatic] selectObjectByGuid failed for ${guid}:`, error);
-        return false;
-    }
-}
-
-/**
- * Walks every loaded model's objects, fetches their properties in
- * batches, and indexes them by GUID (MS) -> {modelId, runtimeId}.
- */
-async function buildGuidIndex(workspaceAPI) {
-    const index = new Map();
-
-    const modelGroups = await workspaceAPI.viewer.getObjects();
-
-    for (const modelGroup of modelGroups ?? []) {
-        const modelId = modelGroup.modelId;
-
-        const runtimeIds = (modelGroup.objects ?? [])
-            .map(object => object.id)
-            .filter(Number.isInteger);
-
-        if (!modelId || runtimeIds.length === 0) continue;
-
-        const batchSize = 250;
-
-        for (let i = 0; i < runtimeIds.length; i += batchSize) {
-            const batch = runtimeIds.slice(i, i + batchSize);
-
-            let properties;
-
-            try {
-                properties = await workspaceAPI.viewer.getObjectProperties(modelId, batch);
-            } catch (error) {
-                console.error(`[ParaMatic] getObjectProperties failed for model ${modelId}:`, batch, error);
-                continue;
+                </div>
             }
 
-            for (const object of properties ?? []) {
-                const msGuid = extractMsGuid(object);
+        </div>
+    </div>
+</aside>
 
-                if (msGuid) {
-                    index.set(msGuid.toLowerCase(), { modelId, runtimeId: object.id });
-                } else {
-                    // Log the raw shape once so we can see the real property
-                    // names/structure if the GUID (MS) property isn't found
-                    // where expected - this is a guess at the property set
-                    // shape based on the "GUID (MS)" label seen in the UI.
-                    console.warn("[ParaMatic] No GUID (MS) property found on object - raw shape:", object);
-                }
-            }
-        }
-    }
 
-    return index;
+@code {
+    private enum Tab { Condition, Telemetry, WorkOrders }
+    private Tab activeTab = Tab.Condition;
+
+    
 }
-
-function extractMsGuid(objectProperties) {
-    for (const set of objectProperties?.properties ?? []) {
-        for (const prop of set?.properties ?? []) {
-            if (typeof prop?.name === "string" && /guid.*\(?ms\)?/i.test(prop.name)) {
-                return prop.value ?? null;
-            }
-        }
-    }
-
-    return null;
-}
-
-/**
- * Refreshes the OAuth token.
- */
-export async function refreshToken(accessToken) {
-    const workspaceAPI = getWorkspaceApi();
-
-    if (!workspaceAPI)
-        return false;
-
-    try {
-
-        await workspaceAPI.embed.setTokens({
-            accessToken: accessToken
-        });
-
-        return true;
-    }
-    catch (e) {
-
-        console.error(e);
-        return false;
-    }
-}
-
-/**
- * Tears down the embedded 3D viewer connection only.
- *
- * Called from TrimbleDashboard.razor when that component is disposed
- * (e.g. navigating away from the dashboard tab). Unlike
- * trimble-extension.js's dispose(), this does not clear the outer
- * extension connection (`api`, `dotNetReference`, `cachedAccessToken`)
- * since the extension shell (TrimbleExtension.razor) may still be
- * mounted and connected.
- */
-export function disposeViewer() {
-    guidToObjectRef = null;
-    disposeSharedViewer();
-}
-
-/**
- * Scrolls the given asset's row into view in the dashboard's sidebar
- * list, if it's not already fully visible. DOM-only, no Trimble state
- * - kept here since it's purely a dashboard UI concern.
- */
-export function scrollToAssetRow(ifcGuid) {
-    if (!ifcGuid) return;
-
-    const element = document.getElementById(`asset-row-${ifcGuid}`);
-
-    if (!element) {
-        console.warn(`Asset row '${ifcGuid}' was not found.`);
-        return;
-    }
-
-    const container = element.closest(".asset-list");
-
-    if (!container) {
-        element.scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-        });
-
-        return;
-    }
-
-    const elementRect = element.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-
-    const isVisible =
-        elementRect.top >= containerRect.top &&
-        elementRect.bottom <= containerRect.bottom;
-
-    if (!isVisible) {
-        element.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-            inline: "nearest"
-        });
-    }
-}
-
-/*
- * Unrelated to Trimble entirely (a chart-width DOM helper) - carried
- * over as-is from the pre-split file rather than silently dropped.
- * Worth moving to its own small file later if it's actually used by a
- * chart component somewhere.
- */
-window.trendChart = {
-    getWidth: function (element) {
-        if (!element) {
-            return 0;
-        }
-
-        return element.getBoundingClientRect().width;
-    }
-};
-
