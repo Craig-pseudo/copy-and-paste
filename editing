@@ -1,1 +1,216 @@
-https://paramaticremotecontrolc-plantvision-c7grdrc5c6csdkdy.scm.azurewebsites.net/api/vfs/site/wwwroot/js/
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server;
+using Vision.Model.Trimble;
+using Vision.Components;
+ 
+var builder = WebApplication.CreateBuilder(args);
+ 
+// ------------------------------------------------------------
+// Razor Components / Blazor
+// ------------------------------------------------------------
+ 
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+ 
+// Detailed Blazor circuit errors
+builder.Services.Configure<CircuitOptions>(options =>
+{
+    options.DetailedErrors = true;
+});
+ 
+builder.Services.AddServerSideBlazor()
+    .AddHubOptions(options =>
+    {
+        options.MaximumReceiveMessageSize = 5 * 1024 * 1024;
+    });
+ 
+// ------------------------------------------------------------
+// Radzen
+// ------------------------------------------------------------
+ 
+//builder.Services.AddRadzenComponents();
+ 
+// ------------------------------------------------------------
+// MVC / Controllers
+// ------------------------------------------------------------
+ 
+builder.Services.AddControllers();
+ 
+// ------------------------------------------------------------
+// HTTP
+// ------------------------------------------------------------
+ 
+builder.Services.AddHttpClient();
+ 
+// ------------------------------------------------------------
+// Services
+// ------------------------------------------------------------
+ 
+//builder.Services.AddSingleton<ToastService>();
+ 
+//builder.Services.AddScoped<IAuthentication, Authentication>();
+ 
+// ------------------------------------------------------------
+// Authentication / Authorization
+// ------------------------------------------------------------
+ 
+builder.Services.AddAuthorizationCore();
+builder.Services.AddCascadingAuthenticationState();
+ 
+builder.Services.AddScoped<TrimbleTokenStore>();
+ 
+builder.Services.AddScoped<TrimbleAuthenticationStateProvider>();
+ 
+builder.Services.AddScoped<AuthenticationStateProvider>(
+    services => services.GetRequiredService<TrimbleAuthenticationStateProvider>());
+ 
+// ------------------------------------------------------------
+// Session
+// ------------------------------------------------------------
+ 
+builder.Services.AddDistributedMemoryCache();
+ 
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.Name = ".ParaMatic.Session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+ 
+// Needed by services that access HttpContext
+builder.Services.AddHttpContextAccessor();
+ 
+// ------------------------------------------------------------
+// CORS - Trimble Connect
+// ------------------------------------------------------------
+ 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("TrimbleConnect", policy =>
+    {
+        policy
+            .WithOrigins("https://web.connect.trimble.com")
+            .AllowCredentials()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+ 
+// ------------------------------------------------------------
+// Antiforgery
+// ------------------------------------------------------------
+ 
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+ 
+// ------------------------------------------------------------
+// Build application
+// ------------------------------------------------------------
+ 
+var app = builder.Build();
+ 
+// ------------------------------------------------------------
+// Error handling / HTTPS
+// ------------------------------------------------------------
+ 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler(
+        "/Error",
+        createScopeForErrors: true);
+ 
+    app.UseHsts();
+}
+ 
+ 
+//app.Use(async (context, next) =>
+//{
+//    if (context.Request.Path.StartsWithSegments("/manifest.json"))
+//    {
+//        context.Response.Headers.Append("Access-Control-Allow-Origin", "https://web.connect.trimble.com");
+//        context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+//        context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type");
+//    }
+//    await next();
+//});
+ 
+app.UseHttpsRedirection();
+ 
+// ------------------------------------------------------------
+// CORS
+// IMPORTANT: before endpoints are executed
+// ------------------------------------------------------------
+ 
+app.UseCors("TrimbleConnect");
+ 
+// ------------------------------------------------------------
+// Session
+// ------------------------------------------------------------
+ 
+app.UseSession();
+ 
+// ------------------------------------------------------------
+// Static files
+// This serves wwwroot/manifest.json and icon.png
+// ------------------------------------------------------------
+ 
+app.UseStaticFiles();
+ 
+// ------------------------------------------------------------
+// Routing
+// ------------------------------------------------------------
+ 
+app.UseRouting();
+ 
+// ------------------------------------------------------------
+// Status code handling
+//
+// IMPORTANT: this must run BEFORE UseAntiforgery(). When a request
+// 404s, this middleware re-executes the pipeline against "/not-found"
+// internally - but that re-execution only replays whatever comes
+// AFTER this middleware in the chain. Antiforgery was previously
+// registered before this, so it never ran on the re-routed request,
+// and the Razor Component "/not-found" endpoint (which carries
+// antiforgery metadata) blew up with:
+//   "Endpoint /not-found contains anti-forgery metadata, but a
+//    middleware was not found that supports anti-forgery."
+// That turned every plain 404 (e.g. a missing/misdeployed static
+// file) into an unhandled exception -> full 500 -> dead Blazor
+// circuit, instead of a normal "not found" page.
+// ------------------------------------------------------------
+ 
+app.UseStatusCodePagesWithReExecute(
+    "/not-found",
+    createScopeForStatusCodePages: true);
+ 
+// ------------------------------------------------------------
+// Antiforgery
+// ------------------------------------------------------------
+ 
+app.UseAntiforgery();
+ 
+// ------------------------------------------------------------
+// API Controllers
+// ------------------------------------------------------------
+ 
+app.MapControllers();
+ 
+// ------------------------------------------------------------
+// Blazor / Razor Components
+// ------------------------------------------------------------
+ 
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode(options =>
+        options.ContentSecurityFrameAncestorsPolicy =
+            "'self' https://web.connect.trimble.com");
+ 
+// ------------------------------------------------------------
+// Run
+// ------------------------------------------------------------
+ 
+app.Run();
+ 
