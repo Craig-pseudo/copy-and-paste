@@ -1,71 +1,39 @@
-@inject IJSRuntime JS
-
-
-<section class="flex flex-1 min-h-0 h-full w-full gap-2">
-
-    <!-- Left side -->
-    <LeftAside Members="@_members" OnMemberSelected="HandleMemberSelected" />
-
-    <!-- BIM -->
-    <Viewport @ref="_viewportRef" AccessToken="@AccessToken" ProjectId="@ProjectId" />
-
-    <!-- Right side -->
-    <RightAside SelectedMember="@_selectedMember" />
-
-</section>
-
-@code {
-
-    [Parameter]
-    public string? AccessToken { get; set; }
-
-    [Parameter]
-    public string? ProjectId { get; set; }
-
-    private Viewport? _viewportRef;
-    private LeftAside.MemberSummary? _selectedMember;
-
-    // TODO: replace with the real beam list once it's loaded from
-    // beamData.json / the live model instead of hardcoded here.
-    private List<LeftAside.MemberSummary> _members = new()
+private List<LeftAside.MemberSummary> _members = new()
+{
+    new()
     {
-        new() { Guid = Guid.Parse("4fec0fcb-4002-4f0e-b2fd-37073501040d"), Name = "Beam Loss" },
-        new() { Guid = Guid.Parse("969a6149-13ad-49e3-8369-6f2bd4c4c557"), Name = "Web Section Loss" },
-        new() { Guid = Guid.Parse("84877aa1-443a-496f-b5e2-fece48feb460"), Name = "Web Section Loss 2" }
-    };
-
-    private void HandleMemberSelected(Guid guid)
+        Guid = Guid.Parse("4fec0fcb-4002-4f0e-b2fd-37073501040d"),
+        Name = "Beam Loss",
+        LengthMm = 8598,
+        WidthMm = 60,
+        HeightMm = 60,
+        NetSurfaceAreaM2 = 2.06,
+        AreaPerTonM2 = 43.01,
+        VolumeM3 = 0.01,
+        WeightT = 0.047
+    },
+    new()
     {
-        // Update and render the right-side panel immediately - it must not
-        // wait on the 3D viewer. Highlighting the object in the Trimble
-        // viewer can take several seconds (it walks every loaded object to
-        // build a GUID index the first time) or fail outright, and none of
-        // that should block or hide the right-side detail update.
-        _selectedMember = _members.FirstOrDefault(m => m.Guid == guid);
-        StateHasChanged();
-
-        if (_viewportRef is not null)
-        {
-            // Fire-and-forget: run the viewer selection in the background so
-            // an exception or a long-running call here can never prevent
-            // (or delay) the right panel from having already updated above.
-            _ = SelectInViewerAsync(guid);
-        }
+        Guid = Guid.Parse("969a6149-13ad-49e3-8369-6f2bd4c4c557"),
+        Name = "Web Section Loss",
+        LengthMm = 1228,
+        WidthMm = 55,
+        HeightMm = 120,
+        NetSurfaceAreaM2 = 0.54,
+        AreaPerTonM2 = 32.66,
+        VolumeM3 = 0,
+        WeightT = 0.016
+    },
+    new()
+    {
+        Guid = Guid.Parse("84877aa1-443a-496f-b5e2-fece48feb460"),
+        Name = "Web Section Loss 2",
+        LengthMm = 1228,
+        WidthMm = 55,
+        HeightMm = 120,
+        NetSurfaceAreaM2 = 0.54,
+        AreaPerTonM2 = 32.66,
+        VolumeM3 = 0,
+        WeightT = 0.016
     }
-
-    private async Task SelectInViewerAsync(Guid guid)
-    {
-        try
-        {
-            if (_viewportRef is not null)
-            {
-                await _viewportRef.SelectObjectAsync(guid);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"BIMViewport: failed to select {guid} in the 3D viewer: {ex.Message}");
-        }
-    }
-
-}
+};
