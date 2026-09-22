@@ -1,134 +1,38 @@
-Beam Loss
-
-GUID (MS)
-4fec0fcb-4002-4f0e-b2fd-37073501040d
-
-GUID (IFC)
-1Fx0$BG09F3hBzDmSr0GGD
-
-File Format
-IFC
-
-Common Type
-BEAM
-
-File Name
-C302_26_RCL_BOB (1) (1).tekla
-
-Presentation Layers
-
-Layer
-Beam
-
-Tekla Quantity
-
-Length
-8598 mm
-
-Width
-60 mm
-
-Height
-60 mm
-
-Net surface area
-2.06 m²
-
-Area per tons
-43.01 m²
-
-Volume
-0.01 m³
-
-Weight
-0.047 t
-
-
-web Section Loss
-
-GUID (MS)
-969a6149-13ad-49e3-8369-6f2bd4c4c557
-
-GUID (IFC)
-2Mcc594wr9uuDfRolKnCLN
-
-File Format
-IFC
-
-Common Type
-BEAM
-
-File Name
-C302_26_RCL_BOB (1) (1).tekla
-
-Presentation Layers
-
-Layer
-Channle
-
-Tekla Quantity
-
-Length
-1228 mm
-
-Width
-55 mm
-
-Height
-120 mm
-
-Net surface area
-0.54 m²
-
-Area per tons
-32.66 m²
-
-Volume
-0 m³
-
-Weight
-0.016 t
-
-Web section loss 2
-GUID (MS)
-84877aa1-443a-496f-b5e2-fece48feb460
-
-GUID (IFC)
-24XtgXH3f9RxNY$iv8$hHW
-
-File Format
-IFC
-
-Common Type
-BEAM
-
-File Name
-C302_26_RCL_BOB (1) (1).tekla
-
-Presentation Layers
-
-Layer
-Channle
-
-Tekla Quantity
-
-Length
-1228 mm
-
-Width
-55 mm
-
-Height
-120 mm
-
-Net surface area
-0.54 m²
-
-Area per tons
-32.66 m²
-
-Volume
-0 m³
-
-Weight
-0.016 t
+[
+  {
+    "name": "Beam Loss",
+    "guidIfc": "1Fx0$BG09F3hBzDmSr0GGD",
+    "commonType": "BEAM",
+    "lengthMm": 8598,
+    "widthMm": 60,
+    "heightMm": 60,
+    "netSurfaceAreaM2": 2.06,
+    "areaPerTonM2": 43.01,
+    "volumeM3": 0.01,
+    "weightT": 0.047
+  },
+  {
+    "name": "Web Section Loss",
+    "guidIfc": "2Mcc594wr9uuDfRolKnCLN",
+    "commonType": "BEAM",
+    "lengthMm": 1228,
+    "widthMm": 55,
+    "heightMm": 120,
+    "netSurfaceAreaM2": 0.54,
+    "areaPerTonM2": 32.66,
+    "volumeM3": 0,
+    "weightT": 0.016
+  },
+  {
+    "name": "Web Section Loss 2",
+    "guidIfc": "24XtgXH3f9RxNY$iv8$hHW",
+    "commonType": "BEAM",
+    "lengthMm": 1228,
+    "widthMm": 55,
+    "heightMm": 120,
+    "netSurfaceAreaM2": 0.54,
+    "areaPerTonM2": 32.66,
+    "volumeM3": 0,
+    "weightT": 0.016
+  }
+]
