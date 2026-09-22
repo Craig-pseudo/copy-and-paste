@@ -1,73 +1,13 @@
-kudu_ssh_user@d1a7acb83eaf:/$ ls -la /home/site/
-total 4
-drwxrwxrwx 2 nobody nogroup    0 Jul 29 11:53 .
-drwxrwxrwx 2 nobody nogroup 4096 Sep 22 09:51 ..
-drwxrwxrwx 2 nobody nogroup    0 Jul 29 11:53 build
-drwxrwxrwx 2 nobody nogroup    0 Jul 29 11:53 config
-drwxrwxrwx 2 nobody nogroup    0 Sep 21 12:47 deployments
-drwxrwxrwx 2 nobody nogroup    0 Sep 21 12:47 locks
-drwxrwxrwx 2 nobody nogroup    0 Jul 29 11:52 repository
-drwxrwxrwx 2 nobody nogroup    0 Aug 28 13:59 wwwroot
-
-kudu_ssh_user@d1a7acb83eaf:/$ ls -la /home/site/wwwroot/
-total 56633
-drwxrwxrwx 2 nobody nogroup    12288 Aug 28 13:59 .
-drwxrwxrwx 2 nobody nogroup        0 Jul 29 11:53 ..
--rwxrwxrwx 1 nobody nogroup   879416 Apr 24 18:43 Azure.Core.dll
--rwxrwxrwx 1 nobody nogroup    17952 Apr 11 01:27 Azure.Identity.dll
--rwxrwxrwx 1 nobody nogroup   366952 May  6 12:55 Azure.Security.KeyVault.Keys.dll
--rwxrwxrwx 1 nobody nogroup   219496 May  5 22:56 Azure.Security.KeyVault.Secrets.dll
--rwxrwxrwx 1 nobody nogroup   171008 Oct  3  2025 HtmlAgilityPack.dll
--rwxrwxrwx 1 nobody nogroup    20280 Jan 25  2026 Microsoft.Bcl.AsyncInterfaces.dll
--rwxrwxrwx 1 nobody nogroup  2107800 Jun 25 00:38 Microsoft.Data.SqlClient.dll
--rwxrwxrwx 1 nobody nogroup    34616 Jul 24 18:26 Microsoft.EntityFrameworkCore.Abstractions.dll
--rwxrwxrwx 1 nobody nogroup  2194784 Jul 24 18:27 Microsoft.EntityFrameworkCore.Relational.dll
--rwxrwxrwx 1 nobody nogroup   642360 Jul 24 18:27 Microsoft.EntityFrameworkCore.SqlServer.dll
--rwxrwxrwx 1 nobody nogroup  2829112 Jul 24 18:27 Microsoft.EntityFrameworkCore.dll
--rwxrwxrwx 1 nobody nogroup    74040 Jun  4 23:22 Microsoft.Identity.Client.Broker.dll
--rwxrwxrwx 1 nobody nogroup    66592 Mar 10  2026 Microsoft.Identity.Client.Extensions.Msal.dll
--rwxrwxrwx 1 nobody nogroup    93024 May 27 12:26 Microsoft.Identity.Client.NativeInterop.dll
--rwxrwxrwx 1 nobody nogroup  1220960 Jun  4 23:16 Microsoft.Identity.Client.dll
--rwxrwxrwx 1 nobody nogroup    19504 Aug 15  2025 Microsoft.IdentityModel.Abstractions.dll
--rwxrwxrwx 1 nobody nogroup   174624 Jun  3  2025 Microsoft.IdentityModel.JsonWebTokens.dll
--rwxrwxrwx 1 nobody nogroup    36928 Jun  3  2025 Microsoft.IdentityModel.Logging.dll
--rwxrwxrwx 1 nobody nogroup   128032 Jul 20  2024 Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
--rwxrwxrwx 1 nobody nogroup    40992 Jul 20  2024 Microsoft.IdentityModel.Protocols.dll
--rwxrwxrwx 1 nobody nogroup   375368 Jun  3  2025 Microsoft.IdentityModel.Tokens.dll
--rwxrwxrwx 1 nobody nogroup    23976 Jan 27  2022 Microsoft.SqlServer.Server.dll
--rwxrwxrwx 1 nobody nogroup   723368 Sep 16  2025 Newtonsoft.Json.dll
--rwxrwxrwx 1 nobody nogroup    78256 Sep 21 14:45 ParaMatic_Remote_Control_Centre
--rwxrwxrwx 1 nobody nogroup    24423 Sep 21 14:45 ParaMatic_Remote_Control_Centre.deps.json
--rwxrwxrwx 1 nobody nogroup   884736 Sep 21 14:45 ParaMatic_Remote_Control_Centre.dll
--rwxrwxrwx 1 nobody nogroup   351584 Sep 21 14:45 ParaMatic_Remote_Control_Centre.pdb
--rwxrwxrwx 1 nobody nogroup      668 Sep 16 07:52 ParaMatic_Remote_Control_Centre.runtimeconfig.json
--rwxrwxrwx 1 nobody nogroup   555318 Sep 21 14:45 ParaMatic_Remote_Control_Centre.staticwebassets.endpoints.json
--rwxrwxrwx 1 nobody nogroup  4416512 Jul 22 09:32 Radzen.Blazor.dll
--rwxrwxrwx 1 nobody nogroup   256584 Mar 17  2026 System.ClientModel.dll
--rwxrwxrwx 1 nobody nogroup   443176 Oct 18  2025 System.Configuration.ConfigurationManager.dll
--rwxrwxrwx 1 nobody nogroup    89016 Jul 20  2024 System.IdentityModel.Tokens.Jwt.dll
--rwxrwxrwx 1 nobody nogroup    33544 Jan 25  2026 System.Memory.Data.dll
--rwxrwxrwx 1 nobody nogroup    38696 Oct 18  2025 System.Security.Cryptography.ProtectedData.dll
--rwxrwxrwx 1 nobody nogroup   113664 Apr 10 16:50 Trimble.ID.dll
--rwxrwxrwx 1 nobody nogroup     5632 Apr 10 16:50 TrimbleCloud.Common.Logging.dll
--rwxrwxrwx 1 nobody nogroup     9216 Apr 10 16:50 TrimbleCloud.Common.dll
--rwxrwxrwx 1 nobody nogroup      127 Jul 30 15:07 appsettings.Development.json
--rwxrwxrwx 1 nobody nogroup     2176 Aug 28 13:38 appsettings.json
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 cs
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 de
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 es
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 fr
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 it
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 ja
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 ko
--rwxrwxrwx 1 nobody nogroup 38133864 May 27 12:26 libmsalruntime.so
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 pl
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 pt-BR
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 ru
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 tr
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 wwwroot
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 zh-Hans
-drwxrwxrwx 2 nobody nogroup        0 Sep 21 12:47 zh-Hant
-kudu_ssh_user@d1a7acb83eaf:/$ 
-
-
+kudu_ssh_user@d1a7acb83eaf:/$ ls -la /home/site/wwwroot/wwwroot/js/
+total 124
+drwxrwxrwx 2 nobody nogroup  4096 Sep 21 12:47 .
+drwxrwxrwx 2 nobody nogroup  4096 Sep 21 12:47 ..
+-rwxrwxrwx 1 nobody nogroup 16647 Sep 21 14:38 trimbleAuth.js
+-rwxrwxrwx 1 nobody nogroup  3536 Sep 21 14:45 trimbleAuth.js.br
+-rwxrwxrwx 1 nobody nogroup  4215 Sep 21 14:45 trimbleAuth.js.gz
+-rwxrwxrwx 1 nobody nogroup  7088 Sep 21 14:42 trimbleDashboard.js
+-rwxrwxrwx 1 nobody nogroup  1707 Sep 21 14:45 trimbleDashboard.js.br
+-rwxrwxrwx 1 nobody nogroup  2038 Sep 21 14:45 trimbleDashboard.js.gz
+-rwxrwxrwx 1 nobody nogroup 42186 Sep 21 14:42 trimbleWorkspace.js
+-rwxrwxrwx 1 nobody nogroup  8234 Sep 21 14:45 trimbleWorkspace.js.br
+-rwxrwxrwx 1 nobody nogroup  9618 Sep 21 14:45 trimbleWorkspace.js.gz
