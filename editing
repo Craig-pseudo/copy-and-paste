@@ -1,770 +1,426 @@
-@using Microsoft.AspNetCore.Components
-@using Microsoft.JSInterop
-
-@inject IJSRuntime JS
-
-@implements IAsyncDisposable
-
-<section class="w-5/8 h-[calc(100vh-120px)] bg-white rounded-xl p-0 flex flex-col gap-0">
-
-
-    <!-- TOP: VIEWPORT  -->
-
-
-    <div class="bg-gray-200 flex-[3] min-h-0 rounded-lg overflow-hidden h-2/3 ">
-
-        <!-- trrimble iframe goes here -->
-        <div class="w-full h-full">
-
-            <iframe @ref="_iframeRef"
-                    id="trimbleViewer"
-                    src="https://web.connect.trimble.com/?isEmbedded=true"
-                    title="Trimble Connect 3D Viewer"
-                    class="w-full h-full"
-                    frameborder="0"
-                    allow="fullscreen; clipboard-read; clipboard-write"
-                    allowfullscreen>
-            </iframe>
-        </div>
-
-    </div>
-
-
-    <!-- BOTTOM: DATA GRID   -->
-
-
-    <div class="bg-white  min-h-0 flex flex-col h-1/3">
-
-        <!-- Toolbar -->
-        <div class="text-slate-500 px-2 flex items-center w-full shrink-0 border-b border-gray-300 h-10 p-2">
-
-            <!-- LEFT -->
-            <div class="flex items-center gap-4">
-
-                <!-- All Visible / Selected -->
-                <div class="flex border border-gray-400 rounded-sm overflow-hidden">
-
-                    <div class="px-3 py-0">
-                        All Visible (12)
-                    </div>
-
-                    <div class="px-3 py-0 border-l border-gray-400">
-                        Selected (12)
-                    </div>
-
-                </div>
-
-
-               <!-- Group By -->
-<div class="flex items-center gap-2">
-
-    <span>
-        Group By:
-    </span>
-
-    <!-- Dropdown container -->
-                    <div class="flex gap-2 items-center">
-
-
-                        <!-- FIRST DROPDOWN: GROUP -->
-                  
-
-                        <div class="relative">
-
-                            <button @onclick="ToggleGroupDropdown"
-                                    class="inline-flex items-center bg-white rounded-sm h-6 justify-center text-slate-500 border border-gray-400 font-medium leading-5 text-sm px-2 py-0 focus:outline-none"
-                                    type="button">
-
-                                @selectedGroup
-
-                                <svg class="w-3 h-3 ml-1"
-                                     fill="none"
-                                     stroke="currentColor"
-                                     viewBox="0 0 24 24"
-                                     xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="2"
-                                          d="M6 9l6 6 6-6">
-                                    </path>
-                                </svg>
-
-                            </button>
-
-
-                            <!-- FIRST DROPDOWN MENU -->
-                            @if (groupDropdownOpen)
-                            {
-                                <div class="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-md shadow-lg w-44">
-
-                                    <ul class="p-2 text-sm text-gray-700 font-medium">
-
-                                        @foreach (var group in groupOptions)
-                                        {
-                                            <li>
-
-                                                <button @onclick="() => SelectGroup(group)"
-                                                        class="inline-flex items-center w-full p-2 hover:bg-gray-100 rounded text-left">
-
-                                                    @group
-
-                                                </button>
-
-                                            </li>
-                                        }
-
-                                    </ul>
-
-                                </div>
-                            }
-
-                        </div>
-
-
-
-                        <!-- SECOND DROPDOWN -->
-
-                        @if (selectedGroup != "None")
-                        {
-                            <div class="relative">
-
-                                <button @onclick="ToggleValueDropdown"
-                                        class="inline-flex items-center bg-white rounded-sm h-6 justify-center text-slate-500 border border-gray-400 font-medium leading-5 text-sm px-2 py-0 focus:outline-none"
-                                        type="button">
-
-                                    @selectedValue
-
-                                    <svg class="w-3 h-3 ml-1"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24"
-                                         xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              stroke-width="2"
-                                              d="M6 9l6 6 6-6">
-                                        </path>
-                                    </svg>
-
-                                </button>
-
-
-                                <!-- SECOND DROPDOWN MENU -->
-                                @if (valueDropdownOpen)
-                                {
-                                    <div class="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-md shadow-lg w-44">
-
-                                        <ul class="p-2 text-sm text-gray-700 font-medium">
-
-                                            @foreach (var value in CurrentValues)
-                                            {
-                                                <li>
-
-                                                    <button @onclick="() => SelectValue(value)"
-                                                            class="inline-flex items-center w-full p-2 hover:bg-gray-100 rounded text-left">
-
-                                                        @value
-
-                                                    </button>
-
-                                                </li>
-                                            }
-
-                                        </ul>
-
-                                    </div>
-                                }
-
-                            </div>
-                        }
-
-                    </div>
-
-
-                </div>
-
-
-
-            </div>
-
-
-            <!-- RIGHT -->
-            <div class="ml-auto">
-
-            </div>
-
-        </div>
-
-
-        <!-- TABLE -->
-        <div class="flex-1 min-h-0 overflow-auto bg-white  shadow-md">
-
-            <table id="productTable"
-                   class="w-full text-left table-auto">
-                <!--Table headings-->
-                <thead class="bg-white ">
-                    <tr>
-
-                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
-                            <p class="text-sm font-medium text-slate-500">
-                                Condition
-                            </p>
-                        </th>
-
-                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
-                            <p class="text-sm font-medium text-slate-500">
-                                Members
-                            </p>
-                        </th>
-
-                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
-                            <p class="text-sm font-medium text-slate-500">
-                                Length (m)
-                            </p>
-                        </th>
-
-                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
-                            <p class="text-sm font-medium text-slate-500">
-                                Mass(Kg)
-                            </p>
-                        </th>
-
-                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
-                            <p class="text-sm font-medium text-slate-500">
-                                Paint (m²)
-                            </p>
-                        </th>
-                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
-                            <p class="text-sm font-medium text-slate-500">
-                                Avg kg/m
-                            </p>
-                        </th>
-
-                    </tr>
-                </thead>
-
-
-                <tbody>
-
-                    <!-- C1 - Critical -->
-<tr class="hover:bg-slate-50 text-sm">
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200 text-red-600">
-        C1 - Critical
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        2
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        17.5
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        1 284
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        35.0
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        73.4
-    </td>
-
-</tr>
-
-
-<!-- C2 - Poor -->
-<tr class="hover:bg-slate-50 text-sm">
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200 text-red-400">
-        C2 - Poor
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        3
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        17.2
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        1 200
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        37.4
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        69.8
-    </td>
-
-</tr>
-
-
-<!-- C3 - Moderate -->
-<tr class="hover:bg-slate-50 text-sm">
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200 text-orange-500">
-        C3 - Moderate
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        3
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        27.8
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        2 108
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        52.8
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        75.8
-    </td>
-
-</tr>
-
-
-<!-- C4 - Good -->
-<tr class="hover:bg-slate-50 text-sm">
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200 text-green-400">
-        C4 - Good
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        2
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        15.4
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        1 058
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        24.8
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        68.7
-    </td>
-
-</tr>
-
-
-<!-- C5 - Acceptable -->
-<tr class="hover:bg-slate-50 text-sm">
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200 text-green-700">
-        C5 - Acceptable
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        2
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        18.0
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        1 660
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        34.2
-    </td>
-
-    <td class="h-8 px-3 py-0 border-b border-slate-200">
-        92.2
-    </td>
-
-</tr>
-
-
-
-
-                </tbody>
-
-
-               <tfoot>
-    <tr>
-
-        <!-- Condition -->
-        <td class="px-3 py-2 text-left font-bold text-slate-800 border-t border-slate-300">
-            TOTAL
-        </td>
-
-        <!-- Members -->
-        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
-            12
-        </td>
-
-        <!-- Length -->
-        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
-            95.9
-        </td>
-
-        <!-- Mass -->
-        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
-            7 310
-        </td>
-
-        <!-- Paint -->
-        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
-            184.2
-        </td>
-
-        <!-- Average kg/m -->
-        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
-            —
-        </td>
-
-    </tr>
-</tfoot>
-
-            </table>
-
-        </div>
-
-    </div>
-
-</section>
-@code {
-
-    [Parameter]
-    public string? AccessToken { get; set; }
-
-    [Parameter]
-    public string? ProjectId { get; set; }
-
-    private ElementReference _iframeRef;
-
-    private IJSObjectReference? _trimbleModule;
-
-    private bool _viewerInitialized;
-    private bool _viewerInitializing;
-
-
-
-
-    // DROPDOWN STATE
-
-
-    private bool groupDropdownOpen = false;
-    private bool valueDropdownOpen = false;
-
-
-
-    // CURRENT SELECTIONS
-
-
-    private string selectedGroup = "None";
-    private string selectedValue = "Select...";
-
-
-
-    // FIRST DROPDOWN OPTIONS
-
-
-    private List<string> groupOptions = new()
-    {
-        "None",
-        "Condition",
-        "Priority",
-        "Structure Type",
-        "Category",
-        "Area",
-        "Profile"
-    };
-
-
-    // SECOND DROPDOWN OPTIONS
-
-
-    private Dictionary<string, List<string>> groupValues = new()
-    {
-        ["Condition"] = new()
-        {
-            "None",
-            "Priority",
-            "Structure Type",
-            "Category",
-            "Area",
-            "Profile"
-        },
-
-        ["Priority"] = new()
-        {
-            "None",
-        "Condition",
-        "Structure Type",
-        "Category",
-        "Area",
-        "Profile"
-        },
-
-        ["Structure Type"] = new()
-        {
-            "None",
-        "Condition",
-        "Priority",
-        "Category",
-        "Area",
-        "Profile"
-        },
-
-        ["Category"] = new()
-        {
-            "None",
-        "Condition",
-        "Priority",
-        "Structure Type",
-        "Area",
-        "Profile"
-        },
-
-        ["Area"] = new()
-        {
-            "None",
-        "Condition",
-        "Priority",
-        "Structure Type",
-        "Category",
-        "Profile"
-        },
-
-        ["Profile"] = new()
-        {
-            "None",
-        "Condition",
-        "Priority",
-        "Structure Type",
-        "Category",
-        "Area"
+import {
+    setViewerDotNetReference,
+    setWorkspaceApi,
+    getWorkspaceApi,
+    handleViewerEvent,
+    dispose as disposeSharedViewer
+} from "./trimbleWorkspace.js";
+
+import { openViewerPopup, initialize, requestAccessToken, dispose } from "./trimbleAuth.js";
+
+/*
+ * Re-exported here (not just imported) because Blazor's JS interop
+ * calls _trimbleModule.InvokeAsync("functionName", ...), which reads
+ * `module["functionName"]` directly off whichever file
+ * TrimbleModulePath points at. An imported-but-not-re-exported
+ * binding is not reachable that way - it has to be a genuine export
+ * of *this* file.
+ */
+// export {
+//     setElementColors,
+//     selectUnmatchedTrimbleObjects,
+//     selectTrimbleObject,
+//     clearViewerSelection,
+//     getAllFlattenedObjects,
+//     // getAllLoadedObjects,
+//     getFlattenedObjectByRuntimeId,
+//     getSelection,
+//     zoomToSelection
+// } from "./trimbleWorkspace.js";
+
+export { openViewerPopup, initialize, requestAccessToken, dispose };
+ 
+/**
+ * Initializes the embedded Trimble Connect viewer.
+ *
+ * @param {HTMLIFrameElement} iframeElement
+ * @param {string} accessToken
+ * @param {string} projectId
+ * @returns {Promise<boolean>}
+ */
+export async function initializeViewer(
+    iframeElement,
+    accessToken,
+    projectId,
+    modelId,
+    dashboardReference
+) {
+    if (!(iframeElement instanceof HTMLIFrameElement)) {
+        console.error(
+            "[ParaMatic] A valid iframe element is required."
+        );
+
+        return false;
+    }
+
+    if (!accessToken) {
+        console.error(
+            "[ParaMatic] An access token is required."
+        );
+
+        return false;
+    }
+
+    if (!projectId) {
+        console.error(
+            "[ParaMatic] A project ID is required."
+        );
+
+        return false;
+    }
+
+    if (!window.TrimbleConnectWorkspace) {
+        console.error(
+            "[ParaMatic] TrimbleConnectWorkspace is not loaded."
+        );
+
+        return false;
+    }
+
+    setViewerDotNetReference(dashboardReference);
+
+    try {
+        if (!getWorkspaceApi()) {
+            await loadEmbeddedViewerIframe(iframeElement);
+
+            const connected =
+                await window.TrimbleConnectWorkspace.connect(
+                    iframeElement,
+                    handleViewerEvent,
+                    30000
+                );
+
+            setWorkspaceApi(connected);
         }
-    };
 
+        const workspaceAPI = getWorkspaceApi();
 
-    // GET OPTIONS FOR SECOND DROPDOWN
+        const tokenAccepted =
+            await workspaceAPI.embed.setTokens({
+                accessToken
+            });
 
+        if (!tokenAccepted) {
+            console.error(
+                "[ParaMatic] The embedded viewer rejected the token."
+            );
 
-    private IEnumerable<string> CurrentValues
-    {
-        get
-        {
-            if (groupValues.TryGetValue(selectedGroup, out var values))
+            return false;
+        }
+
+        await workspaceAPI.embed.init3DViewer({
+            projectId,
+            modelId
+        });
+
+        console.log(
+            "[ParaMatic] init3DViewer completed.",
             {
-                return values;
+                projectId,
+                modelId
             }
+        );
 
-            return Enumerable.Empty<string>();
-        }
+        await workspaceAPI.ui.setUI({
+            name: "SidePanel",
+            state: "hidden"
+        });
+
+        /*
+         * Don't rely only on viewer.onModelStateChanged.
+         *
+         * init3DViewer starts the loading process but depending on timing
+         * the model-state event can be missed by the extension.
+         */
+        // await loadDashboardObjectsWhenReady(modelId);
+
+        return true;
+    } catch (error) {
+        console.error(
+            "[ParaMatic] Embedded viewer initialization failed.",
+            error
+        );
+
+        setWorkspaceApi(null);
+
+        return false;
     }
-
-
-    // FIRST DROPDOWN
-
-
-    private void ToggleGroupDropdown()
-    {
-        groupDropdownOpen = !groupDropdownOpen;
-
-        // Close second dropdown
-        valueDropdownOpen = false;
-    }
-
-
-    private void SelectGroup(string group)
-    {
-        selectedGroup = group;
-
-        // Close first dropdown
-        groupDropdownOpen = false;
-
-        // Reset second selection
-        selectedValue = "Select...";
-
-        // Close second dropdown
-        valueDropdownOpen = false;
-    }
-
-
-    // SECOND DROPDOWN
-
-    private void ToggleValueDropdown()
-    {
-        valueDropdownOpen = !valueDropdownOpen;
-    }
-
-
-    private void SelectValue(string value)
-    {
-        selectedValue = value;
-
-        valueDropdownOpen = false;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-            return;
-
-        try
-        {
-            _trimbleModule = await JS.InvokeAsync<IJSObjectReference>(
-                "import",
-                "/js/trimbleDashboard.js");
-        }
-        catch (Exception ex)
-        {
-            // Guard against an unhandled exception here killing the whole
-            // Blazor circuit - this must fail soft, not take the app down.
-            Console.WriteLine($"Failed to load trimbleDashboard.js: {ex.Message}");
-            return;
-        }
-
-        await InitializeTrimbleViewerAsync();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        // AccessToken/ProjectId arrive asynchronously from Home.razor,
-        // after Viewport's first render - so this has to re-attempt
-        // initialization whenever they change. InitializeTrimbleViewerAsync
-        // itself is a no-op once _viewerInitialized is true, so this is
-        // safe to call on every parameter update.
-        await InitializeTrimbleViewerAsync();
-    }
-
-    private async Task InitializeTrimbleViewerAsync()
-    {
-        if (_viewerInitialized)
-            return;
-
-        // OnParametersSetAsync can re-fire on every re-render anywhere
-        // up the tree (a dropdown toggle, a list selection, etc.), not
-        // just when AccessToken/ProjectId actually change. Without this
-        // guard, an overlapping call could start while the first one is
-        // still awaiting init3DViewer, causing the iframe to be reset
-        // mid-load - repeatedly - which looks like an endless spinner.
-        if (_viewerInitializing)
-            return;
-
-        if (string.IsNullOrWhiteSpace(AccessToken))
-        {
-            Console.WriteLine("Trimble: waiting for access token.");
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(ProjectId))
-        {
-            Console.WriteLine("Trimble: waiting for project ID.");
-            return;
-        }
-
-        if (_trimbleModule is null)
-            return;
-
-        _viewerInitializing = true;
-
-        try
-        {
-            var initialized = await _trimbleModule.InvokeAsync<bool>(
-                "initializeViewer",
-                _iframeRef,
-                AccessToken,
-                ProjectId,
-                "Bj9R4CgdWgs", // TODO: still hardcoded - resolve via the model-state event (see OnTrimbleEvent below) rather than a literal
-                null);
-
-            if (initialized)
-            {
-                _viewerInitialized = true;
-
-                Console.WriteLine(
-                    "Trimble 3D viewer initialized successfully.");
-            }
-            else
-            {
-                Console.WriteLine(
-                    "Trimble 3D viewer failed to initialize.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(
-                $"Trimble viewer initialization error: {ex}");
-        }
-        finally
-        {
-            _viewerInitializing = false;
-        }
-    }
-
-    /// <summary>
-    /// Highlights the given object (by GUID (MS)) in the embedded 3D
-    /// viewer. Called from BIMViewport when a member is clicked in
-    /// LeftAside.
-    ///
-    /// NOTE: "selectObjectByGuid" on the JS side is currently a
-    /// placeholder that just logs - the real Trimble viewer selection
-    /// call still needs to be confirmed/implemented there.
-    /// </summary>
-    public async Task SelectObjectAsync(Guid guid)
-    {
-        if (_trimbleModule is null)
-        {
-            Console.WriteLine("Trimble: viewer module not loaded yet, cannot select object.");
-            return;
-        }
-
-        try
-        {
-            await _trimbleModule.InvokeVoidAsync(
-                "selectObjectByGuid",
-                guid.ToString());
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Trimble: failed to select object {guid}: {ex.Message}");
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_trimbleModule is not null)
-        {
-            try
-            {
-                await _trimbleModule.InvokeVoidAsync(
-                    "disposeViewer");
-            }
-            catch
-            {
-                // Viewer may already be disconnected.
-            }
-
-            await _trimbleModule.DisposeAsync();
-        }
-    }
-
-
-
-
-
 }
+
+async function loadEmbeddedViewerIframe(iframeElement) {
+    const currentSource =
+        iframeElement.getAttribute("src") ?? "";
+
+    if (
+        currentSource &&
+        currentSource !== "about:blank" &&
+        currentSource !== "#"
+    ) {
+        return;
+    }
+
+    await new Promise((resolve, reject) => {
+        const timeoutId = window.setTimeout(() => {
+            cleanup();
+
+            reject(
+                new Error(
+                    "Timed out loading the embedded Trimble viewer."
+                )
+            );
+        }, 30000);
+
+        const onLoad = () => {
+            cleanup();
+            resolve();
+        };
+
+        const onError = () => {
+            cleanup();
+
+            reject(
+                new Error(
+                    "The embedded Trimble viewer failed to load."
+                )
+            );
+        };
+
+        function cleanup() {
+            window.clearTimeout(timeoutId);
+
+            iframeElement.removeEventListener(
+                "load",
+                onLoad);
+
+            iframeElement.removeEventListener(
+                "error",
+                onError);
+        }
+
+        iframeElement.addEventListener(
+            "load",
+            onLoad,
+            { once: true });
+
+        iframeElement.addEventListener(
+            "error",
+            onError,
+            { once: true });
+
+        iframeElement.src =
+            "https://web.connect.trimble.com/?isEmbedded=true";
+    });
+}
+
+// Lazily-built, cached once per viewer session: GUID (MS) -> {modelId, runtimeId}.
+// Rebuilt (set back to null) whenever the viewer is disposed.
+let guidToObjectRef = null;
+
+/**
+ * Highlights an object in the embedded 3D viewer by its GUID (MS).
+ *
+ * The GUID -> {modelId, runtimeId} lookup (buildGuidIndex/extractMsGuid
+ * below) is built from confirmed working calls (viewer.getObjects,
+ * viewer.getObjectProperties - same ones already used elsewhere in this
+ * project). The actual highlight call, viewer.setSelection, is NOT yet
+ * confirmed against this Trimble SDK version - it's the standard
+ * documented shape ([{modelId, objectRuntimeIds}], mode), but if this
+ * throws or silently does nothing, check the console error logged here
+ * first and report it back before assuming something else is wrong.
+ */
+export async function selectObjectByGuid(guid) {
+    const workspaceAPI = getWorkspaceApi();
+
+    if (!workspaceAPI?.viewer) {
+        console.warn("[ParaMatic] selectObjectByGuid: no active viewer connection.");
+        return false;
+    }
+
+    try {
+        if (!guidToObjectRef) {
+            console.log("[ParaMatic] Building GUID index from loaded models...");
+            guidToObjectRef = await buildGuidIndex(workspaceAPI);
+            console.log(`[ParaMatic] GUID index built: ${guidToObjectRef.size} objects.`);
+        }
+
+        const ref = guidToObjectRef.get(guid.toLowerCase());
+
+        if (!ref) {
+            console.warn(`[ParaMatic] selectObjectByGuid: no object found for GUID ${guid} in loaded models.`);
+            return false;
+        }
+
+        await workspaceAPI.viewer.setSelection(
+            [{ modelId: ref.modelId, objectRuntimeIds: [ref.runtimeId] }],
+            "set"
+        );
+
+        console.log(`[ParaMatic] Selected object ${guid} (model ${ref.modelId}, runtimeId ${ref.runtimeId}).`);
+
+        return true;
+    } catch (error) {
+        console.error(`[ParaMatic] selectObjectByGuid failed for ${guid}:`, error);
+        return false;
+    }
+}
+
+/**
+ * Walks every loaded model's objects, fetches their properties in
+ * batches, and indexes them by GUID (MS) -> {modelId, runtimeId}.
+ */
+async function buildGuidIndex(workspaceAPI) {
+    const index = new Map();
+
+    const modelGroups = await workspaceAPI.viewer.getObjects();
+
+    for (const modelGroup of modelGroups ?? []) {
+        const modelId = modelGroup.modelId;
+
+        const runtimeIds = (modelGroup.objects ?? [])
+            .map(object => object.id)
+            .filter(Number.isInteger);
+
+        if (!modelId || runtimeIds.length === 0) continue;
+
+        const batchSize = 250;
+
+        for (let i = 0; i < runtimeIds.length; i += batchSize) {
+            const batch = runtimeIds.slice(i, i + batchSize);
+
+            let properties;
+
+            try {
+                properties = await workspaceAPI.viewer.getObjectProperties(modelId, batch);
+            } catch (error) {
+                console.error(`[ParaMatic] getObjectProperties failed for model ${modelId}:`, batch, error);
+                continue;
+            }
+
+            for (const object of properties ?? []) {
+                const msGuid = extractMsGuid(object);
+
+                if (msGuid) {
+                    index.set(msGuid.toLowerCase(), { modelId, runtimeId: object.id });
+                } else {
+                    // Log the raw shape once so we can see the real property
+                    // names/structure if the GUID (MS) property isn't found
+                    // where expected - this is a guess at the property set
+                    // shape based on the "GUID (MS)" label seen in the UI.
+                    console.warn("[ParaMatic] No GUID (MS) property found on object - raw shape:", object);
+                }
+            }
+        }
+    }
+
+    return index;
+}
+
+function extractMsGuid(objectProperties) {
+    for (const set of objectProperties?.properties ?? []) {
+        for (const prop of set?.properties ?? []) {
+            if (typeof prop?.name === "string" && /guid.*\(?ms\)?/i.test(prop.name)) {
+                return prop.value ?? null;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Refreshes the OAuth token.
+ */
+export async function refreshToken(accessToken) {
+    const workspaceAPI = getWorkspaceApi();
+
+    if (!workspaceAPI)
+        return false;
+
+    try {
+
+        await workspaceAPI.embed.setTokens({
+            accessToken: accessToken
+        });
+
+        return true;
+    }
+    catch (e) {
+
+        console.error(e);
+        return false;
+    }
+}
+
+/**
+ * Tears down the embedded 3D viewer connection only.
+ *
+ * Called from TrimbleDashboard.razor when that component is disposed
+ * (e.g. navigating away from the dashboard tab). Unlike
+ * trimble-extension.js's dispose(), this does not clear the outer
+ * extension connection (`api`, `dotNetReference`, `cachedAccessToken`)
+ * since the extension shell (TrimbleExtension.razor) may still be
+ * mounted and connected.
+ */
+export function disposeViewer() {
+    guidToObjectRef = null;
+    disposeSharedViewer();
+}
+
+/**
+ * Scrolls the given asset's row into view in the dashboard's sidebar
+ * list, if it's not already fully visible. DOM-only, no Trimble state
+ * - kept here since it's purely a dashboard UI concern.
+ */
+export function scrollToAssetRow(ifcGuid) {
+    if (!ifcGuid) return;
+
+    const element = document.getElementById(`asset-row-${ifcGuid}`);
+
+    if (!element) {
+        console.warn(`Asset row '${ifcGuid}' was not found.`);
+        return;
+    }
+
+    const container = element.closest(".asset-list");
+
+    if (!container) {
+        element.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+        return;
+    }
+
+    const elementRect = element.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    const isVisible =
+        elementRect.top >= containerRect.top &&
+        elementRect.bottom <= containerRect.bottom;
+
+    if (!isVisible) {
+        element.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "nearest"
+        });
+    }
+}
+
+/*
+ * Unrelated to Trimble entirely (a chart-width DOM helper) - carried
+ * over as-is from the pre-split file rather than silently dropped.
+ * Worth moving to its own small file later if it's actually used by a
+ * chart component somewhere.
+ */
+window.trendChart = {
+    getWidth: function (element) {
+        if (!element) {
+            return 0;
+        }
+
+        return element.getBoundingClientRect().width;
+    }
+};
+
