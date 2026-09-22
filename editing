@@ -1,1 +1,745 @@
 
+@using Microsoft.AspNetCore.Components
+@using Microsoft.JSInterop
+
+@inject IJSRuntime JS
+
+@implements IAsyncDisposable
+
+<section class="w-5/8 h-[calc(100vh-120px)] bg-white rounded-xl p-0 flex flex-col gap-0">
+
+
+    <!-- TOP: VIEWPORT  -->
+
+
+    <div class="bg-gray-200 flex-[3] min-h-0 rounded-lg overflow-hidden h-2/3 ">
+
+        <!-- trrimble iframe goes here -->
+        <div class="w-full h-full">
+
+            <iframe @ref="_iframeRef"
+                    id="trimbleViewer"
+                    src="https://web.connect.trimble.com/?isEmbedded=true"
+                    title="Trimble Connect 3D Viewer"
+                    class="w-full h-full"
+                    frameborder="0"
+                    allow="fullscreen; clipboard-read; clipboard-write"
+                    allowfullscreen>
+            </iframe>
+        </div>
+
+    </div>
+
+
+    <!-- BOTTOM: DATA GRID   -->
+
+
+    <div class="bg-white  min-h-0 flex flex-col h-1/3">
+
+        <!-- Toolbar -->
+        <div class="text-slate-500 px-2 flex items-center w-full shrink-0 border-b border-gray-300 h-10 p-2">
+
+            <!-- LEFT -->
+            <div class="flex items-center gap-4">
+
+                <!-- All Visible / Selected -->
+                <div class="flex border border-gray-400 rounded-sm overflow-hidden">
+
+                    <div class="px-3 py-0">
+                        All Visible (12)
+                    </div>
+
+                    <div class="px-3 py-0 border-l border-gray-400">
+                        Selected (12)
+                    </div>
+
+                </div>
+
+
+               <!-- Group By -->
+<div class="flex items-center gap-2">
+
+    <span>
+        Group By:
+    </span>
+
+    <!-- Dropdown container -->
+                    <div class="flex gap-2 items-center">
+
+
+                        <!-- FIRST DROPDOWN: GROUP -->
+                  
+
+                        <div class="relative">
+
+                            <button @onclick="ToggleGroupDropdown"
+                                    class="inline-flex items-center bg-white rounded-sm h-6 justify-center text-slate-500 border border-gray-400 font-medium leading-5 text-sm px-2 py-0 focus:outline-none"
+                                    type="button">
+
+                                @selectedGroup
+
+                                <svg class="w-3 h-3 ml-1"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M6 9l6 6 6-6">
+                                    </path>
+                                </svg>
+
+                            </button>
+
+
+                            <!-- FIRST DROPDOWN MENU -->
+                            @if (groupDropdownOpen)
+                            {
+                                <div class="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-md shadow-lg w-44">
+
+                                    <ul class="p-2 text-sm text-gray-700 font-medium">
+
+                                        @foreach (var group in groupOptions)
+                                        {
+                                            <li>
+
+                                                <button @onclick="() => SelectGroup(group)"
+                                                        class="inline-flex items-center w-full p-2 hover:bg-gray-100 rounded text-left">
+
+                                                    @group
+
+                                                </button>
+
+                                            </li>
+                                        }
+
+                                    </ul>
+
+                                </div>
+                            }
+
+                        </div>
+
+
+
+                        <!-- SECOND DROPDOWN -->
+
+                        @if (selectedGroup != "None")
+                        {
+                            <div class="relative">
+
+                                <button @onclick="ToggleValueDropdown"
+                                        class="inline-flex items-center bg-white rounded-sm h-6 justify-center text-slate-500 border border-gray-400 font-medium leading-5 text-sm px-2 py-0 focus:outline-none"
+                                        type="button">
+
+                                    @selectedValue
+
+                                    <svg class="w-3 h-3 ml-1"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24"
+                                         xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M6 9l6 6 6-6">
+                                        </path>
+                                    </svg>
+
+                                </button>
+
+
+                                <!-- SECOND DROPDOWN MENU -->
+                                @if (valueDropdownOpen)
+                                {
+                                    <div class="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-md shadow-lg w-44">
+
+                                        <ul class="p-2 text-sm text-gray-700 font-medium">
+
+                                            @foreach (var value in CurrentValues)
+                                            {
+                                                <li>
+
+                                                    <button @onclick="() => SelectValue(value)"
+                                                            class="inline-flex items-center w-full p-2 hover:bg-gray-100 rounded text-left">
+
+                                                        @value
+
+                                                    </button>
+
+                                                </li>
+                                            }
+
+                                        </ul>
+
+                                    </div>
+                                }
+
+                            </div>
+                        }
+
+                    </div>
+
+
+                </div>
+
+
+
+            </div>
+
+
+            <!-- RIGHT -->
+            <div class="ml-auto">
+
+            </div>
+
+        </div>
+
+
+        <!-- TABLE -->
+        <div class="flex-1 min-h-0 overflow-auto bg-white  shadow-md">
+
+            <table id="productTable"
+                   class="w-full text-left table-auto">
+                <!--Table headings-->
+                <thead class="bg-white ">
+                    <tr>
+
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Condition
+                            </p>
+                        </th>
+
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Members
+                            </p>
+                        </th>
+
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Length (m)
+                            </p>
+                        </th>
+
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Mass(Kg)
+                            </p>
+                        </th>
+
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Paint (m²)
+                            </p>
+                        </th>
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Avg kg/m
+                            </p>
+                        </th>
+
+                    </tr>
+                </thead>
+
+
+                <tbody>
+
+                    <!-- C1 - Critical -->
+<tr class="hover:bg-slate-50 text-sm">
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200 text-red-600">
+        C1 - Critical
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        2
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        17.5
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        1 284
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        35.0
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        73.4
+    </td>
+
+</tr>
+
+
+<!-- C2 - Poor -->
+<tr class="hover:bg-slate-50 text-sm">
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200 text-red-400">
+        C2 - Poor
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        3
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        17.2
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        1 200
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        37.4
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        69.8
+    </td>
+
+</tr>
+
+
+<!-- C3 - Moderate -->
+<tr class="hover:bg-slate-50 text-sm">
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200 text-orange-500">
+        C3 - Moderate
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        3
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        27.8
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        2 108
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        52.8
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        75.8
+    </td>
+
+</tr>
+
+
+<!-- C4 - Good -->
+<tr class="hover:bg-slate-50 text-sm">
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200 text-green-400">
+        C4 - Good
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        2
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        15.4
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        1 058
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        24.8
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        68.7
+    </td>
+
+</tr>
+
+
+<!-- C5 - Acceptable -->
+<tr class="hover:bg-slate-50 text-sm">
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200 text-green-700">
+        C5 - Acceptable
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        2
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        18.0
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        1 660
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        34.2
+    </td>
+
+    <td class="h-8 px-3 py-0 border-b border-slate-200">
+        92.2
+    </td>
+
+</tr>
+
+
+
+
+                </tbody>
+
+
+               <tfoot>
+    <tr>
+
+        <!-- Condition -->
+        <td class="px-3 py-2 text-left font-bold text-slate-800 border-t border-slate-300">
+            TOTAL
+        </td>
+
+        <!-- Members -->
+        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
+            12
+        </td>
+
+        <!-- Length -->
+        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
+            95.9
+        </td>
+
+        <!-- Mass -->
+        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
+            7 310
+        </td>
+
+        <!-- Paint -->
+        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
+            184.2
+        </td>
+
+        <!-- Average kg/m -->
+        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
+            —
+        </td>
+
+    </tr>
+</tfoot>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+@code {
+
+    [Parameter]
+    public string? AccessToken { get; set; }
+
+    [Parameter]
+    public string? ProjectId { get; set; }
+
+    private ElementReference _iframeRef;
+
+    private IJSObjectReference? _trimbleModule;
+
+    private bool _viewerInitialized;
+
+
+
+
+    // DROPDOWN STATE
+
+
+    private bool groupDropdownOpen = false;
+    private bool valueDropdownOpen = false;
+
+
+
+    // CURRENT SELECTIONS
+
+
+    private string selectedGroup = "None";
+    private string selectedValue = "Select...";
+
+
+
+    // FIRST DROPDOWN OPTIONS
+
+
+    private List<string> groupOptions = new()
+    {
+        "None",
+        "Condition",
+        "Priority",
+        "Structure Type",
+        "Category",
+        "Area",
+        "Profile"
+    };
+
+
+    // SECOND DROPDOWN OPTIONS
+
+
+    private Dictionary<string, List<string>> groupValues = new()
+    {
+        ["Condition"] = new()
+        {
+            "None",
+            "Priority",
+            "Structure Type",
+            "Category",
+            "Area",
+            "Profile"
+        },
+
+        ["Priority"] = new()
+        {
+            "None",
+        "Condition",
+        "Structure Type",
+        "Category",
+        "Area",
+        "Profile"
+        },
+
+        ["Structure Type"] = new()
+        {
+            "None",
+        "Condition",
+        "Priority",
+        "Category",
+        "Area",
+        "Profile"
+        },
+
+        ["Category"] = new()
+        {
+            "None",
+        "Condition",
+        "Priority",
+        "Structure Type",
+        "Area",
+        "Profile"
+        },
+
+        ["Area"] = new()
+        {
+            "None",
+        "Condition",
+        "Priority",
+        "Structure Type",
+        "Category",
+        "Profile"
+        },
+
+        ["Profile"] = new()
+        {
+            "None",
+        "Condition",
+        "Priority",
+        "Structure Type",
+        "Category",
+        "Area"
+        }
+    };
+
+
+    // GET OPTIONS FOR SECOND DROPDOWN
+
+
+    private IEnumerable<string> CurrentValues
+    {
+        get
+        {
+            if (groupValues.TryGetValue(selectedGroup, out var values))
+            {
+                return values;
+            }
+
+            return Enumerable.Empty<string>();
+        }
+    }
+
+
+    // FIRST DROPDOWN
+
+
+    private void ToggleGroupDropdown()
+    {
+        groupDropdownOpen = !groupDropdownOpen;
+
+        // Close second dropdown
+        valueDropdownOpen = false;
+    }
+
+
+    private void SelectGroup(string group)
+    {
+        selectedGroup = group;
+
+        // Close first dropdown
+        groupDropdownOpen = false;
+
+        // Reset second selection
+        selectedValue = "Select...";
+
+        // Close second dropdown
+        valueDropdownOpen = false;
+    }
+
+
+    // SECOND DROPDOWN
+
+    private void ToggleValueDropdown()
+    {
+        valueDropdownOpen = !valueDropdownOpen;
+    }
+
+
+    private void SelectValue(string value)
+    {
+        selectedValue = value;
+
+        valueDropdownOpen = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+         // _trimbleModule = await JS.InvokeAsync<IJSObjectReference>(
+         //     "import",
+         //     "/js/trimbleDashboard.js");
+
+        await InitializeTrimbleViewerAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // AccessToken/ProjectId arrive asynchronously from Home.razor,
+        // after Viewport's first render - so this has to re-attempt
+        // initialization whenever they change. InitializeTrimbleViewerAsync
+        // itself is a no-op once _viewerInitialized is true, so this is
+        // safe to call on every parameter update.
+        await InitializeTrimbleViewerAsync();
+    }
+
+    private async Task InitializeTrimbleViewerAsync()
+    {
+        if (_viewerInitialized)
+            return;
+
+        if (string.IsNullOrWhiteSpace(AccessToken))
+        {
+            Console.WriteLine("Trimble: waiting for access token.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(ProjectId))
+        {
+            Console.WriteLine("Trimble: waiting for project ID.");
+            return;
+        }
+
+        if (_trimbleModule is null)
+            return;
+
+        try
+        {
+            var initialized = await _trimbleModule.InvokeAsync<bool>(
+                "initializeViewer",
+                _iframeRef,
+                AccessToken,
+                ProjectId,
+                "Bj9R4CgdWgs", // TODO: still hardcoded - resolve via the model-state event (see OnTrimbleEvent below) rather than a literal
+                null);
+
+            if (initialized)
+            {
+                _viewerInitialized = true;
+
+                Console.WriteLine(
+                    "Trimble 3D viewer initialized successfully.");
+            }
+            else
+            {
+                Console.WriteLine(
+                    "Trimble 3D viewer failed to initialize.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"Trimble viewer initialization error: {ex}");
+        }
+    }
+
+    /// <summary>
+    /// Highlights the given object (by GUID (MS)) in the embedded 3D
+    /// viewer. Called from BIMViewport when a member is clicked in
+    /// LeftAside.
+    ///
+    /// NOTE: "selectObjectByGuid" on the JS side is currently a
+    /// placeholder that just logs - the real Trimble viewer selection
+    /// call still needs to be confirmed/implemented there.
+    /// </summary>
+    public async Task SelectObjectAsync(Guid guid)
+    {
+        if (_trimbleModule is null)
+        {
+            Console.WriteLine("Trimble: viewer module not loaded yet, cannot select object.");
+            return;
+        }
+
+        try
+        {
+            await _trimbleModule.InvokeVoidAsync(
+                "selectObjectByGuid",
+                guid.ToString());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Trimble: failed to select object {guid}: {ex.Message}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_trimbleModule is not null)
+        {
+            try
+            {
+                await _trimbleModule.InvokeVoidAsync(
+                    "disposeViewer");
+            }
+            catch
+            {
+                // Viewer may already be disconnected.
+            }
+
+            await _trimbleModule.DisposeAsync();
+        }
+    }
+
+
+
+
+
+}
