@@ -1,475 +1,122 @@
+@using Vision.Components.Home.RightAsideTabs
+
+
 @inject IJSRuntime JS
 
-  <aside class="w-1/8 bg-white rounded-xl  space-y-0 overflow-y-auto">
-                    <div class="w-full ">
-
-
-                        <!-- Filter Header -->
-<div class="flex items-center justify-between h-6 px-2 ">
-
-    <!-- Left: Filter icon + title -->
-    <div class="flex items-center gap-2">
-
-        <!-- Filter Icon -->
-        <svg class="w-4 h-4 text-blue-500"
-             aria-hidden="true"
-             xmlns="http://www.w3.org/2000/svg"
-             fill="none"
-             viewBox="0 0 24 24">
-
-            <path stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M6 12h12m-9 6h6" />
-
-        </svg>
-
-        <span class="text-sm font-medium text-gray-600">
-            Filters
-        </span>
-
-    </div>
-
-
-    <!-- Right: Clear button -->
-    <button type="button"
-            class="text-xs text-gray-500 hover:text-blue-600 transition">
-        Clear
-    </button>
-
-</div>
-
-
-    <!-- Accordion 1 - Area -->
-    <details class="group bg-white border border-gray-200">
-
-    <summary class="flex items-center justify-between cursor-pointer px-3 py-3 text-sm text-gray-500 list-none h-7">
-
-        <span>Area</span>
-
-        <!-- Arrow -->
-        <span class="text-gray-500 accordion-arrow">
-            >
-        </span>
-
-    </summary>
-
-
-    <div class="px-4 pb-2 space-y-1">
-
-        <!-- Area 1 -->
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-
-            <input type="checkbox"
-                   class="filter-checkbox" />
-
-            <span>Area 1</span>
-
-        </label>
-
-
-        <!-- Area 2 -->
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-
-            <input type="checkbox"
-                   class="filter-checkbox" />
-
-            <span>Area 2</span>
-
-        </label>
-
-
-        <!-- Area 3 -->
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-
-            <input type="checkbox"
-                   class="filter-checkbox"/>
-
-            <span>Area 3</span>
-
-        </label>
-
-
-        <!-- Area 4 -->
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-
-            <input type="checkbox"
-                   class="filter-checkbox" />
-
-            <span>Area 4</span>
-
-        </label>
-
-    </div>
-
-</details>
-
-
-
-    <!-- Accordion 2 - Structure Type -->
-<details class="group bg-white border border-gray-200">
-
-    <summary class="flex items-center justify-between cursor-pointer px-3 py-3 text-sm text-gray-500 list-none h-7">
-
-        <span>Structure Type</span>
-
-        <span class="text-gray-500 accordion-arrow">
-            >
-        </span>
-
-    </summary>
-
-    <div class="px-4 pb-2 space-y-1">
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox" />
-            <span>Conveyor</span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox"/>
-            <span>Pipe Rack</span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox" />
-            <span>Silo</span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox" />
-            <span>Access Platform</span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox" />
-            <span>Stockpile Frame</span>
-        </label>
-
-    </div>
-
-</details>
-
-
-<!-- Accordion 3 - Structural Category -->
-<details class="group bg-white border border-gray-200">
-
-    <summary class="flex items-center justify-between cursor-pointer px-3 py-3 text-sm text-gray-500 list-none h-7">
-
-        <span>Structural Category</span>
-
-        <span class="text-gray-500 accordion-arrow">
-            >
-        </span>
-
-    </summary>
-
-    <div class="px-4 pb-2 space-y-1">
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox"/>
-            <span>Beam</span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox" />
-            <span>Column</span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox" />
-            <span>Bracing</span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox" />
-            <span>Connection</span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox" />
-            <span>Grafting</span>
-        </label>
-
-    </div>
-
-</details>
-
-
-<!-- Accordion 4 - Condition Rating -->
-<details class="group bg-white border border-gray-200">
-
-    <summary class="flex items-center justify-between cursor-pointer px-3 py-3 text-sm text-gray-500 list-none h-7">
-
-        <span>Condition Rating</span>
-
-        <span class="text-gray-500 accordion-arrow">
-            >
-        </span>
-
-    </summary>
-
-    <div class="px-4 pb-2 space-y-1">
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox urgent " />
-            <span>1 - Critical</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-red-600
-                        peer-checked:bg-red-600 transition-colors">
-                    </span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox high" />
-            <span>2 - Poor</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-red-400
-                        peer-checked:bg-red-400 transition-colors">
-                    </span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox medium" />
-            <span>3 - Moderate</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-orange-500
-                        peer-checked:bg-orange-500 transition-colors">
-                    </span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox low" />
-            <span>4 - Good</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-green-400
-                        peer-checked:bg-green-400 transition-colors">
-                    </span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox nonUrgent" />
-            <span>5 - Acceptable</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-green-600
-                        peer-checked:bg-green-600 transition-colors">
-                    </span>
-        </label>
-
-    </div>
-
-</details>
-
-
-<!-- Accordion 5 - Priority Level -->
-<details class="group bg-white border border-gray-200">
-
-    <summary class="flex items-center justify-between cursor-pointer px-3 py-3 text-sm text-gray-500 list-none h-7">
-
-        <span>Priority Level</span>
-
-        <span class="text-gray-500 accordion-arrow">
-            >
-        </span>
-
-    </summary>
-
-    <div class="px-4 pb-2 space-y-1">
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox urgent" />
-            <span>P1 - Urgent</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-red-600
-                        peer-checked:bg-red-600 transition-colors">
-                    </span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox high" />
-            <span>P2 - High</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-red-400
-                        peer-checked:bg-red-400 transition-colors">
-                    </span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox medium" />
-            <span>P3 - Medium</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-orange-500
-                        peer-checked:bg-orange-500 transition-colors">
-                    </span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox low" />
-            <span>P4 - Low</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-green-400
-                        peer-checked:bg-green-400 transition-colors">
-                    </span>
-        </label>
-
-        <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-            <input type="checkbox"
-                   class="filter-checkbox nonUrgent" />
-            <span>P5 - Non-Urgent</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-green-600
-                        peer-checked:bg-green-600 transition-colors">
-                    </span>
-        </label>
-
-    </div>
-
-</details>
-
-
-<!-- Accordion 6 - Sensor Status -->
-<details class="group bg-white border border-gray-200">
-
-    <summary class="flex items-center justify-between cursor-pointer px-3 py-3 text-sm text-gray-500 list-none h-7">
-
-        <span>Sensor Status</span>
-
-        <span class="text-gray-500 accordion-arrow">
-            >
-        </span>
-
-    </summary>
-
-            <div class="px-4 pb-2 space-y-1">
-
-                <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-                    <input type="checkbox" class="filter-checkbox normal" />
-                    <span>Normal</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-green-500"></span>
-                </label>
-
-                <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-                    <input type="checkbox" class="filter-checkbox warning" />
-                    <span>Warning</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-orange-500"></span>
-                </label>
-
-                <label class="flex items-center gap-3 text-sm text-gray-500 cursor-pointer">
-                    <input type="checkbox" class="filter-checkbox alarm" />
-                    <span>Alarm</span>
-                    <span class="w-2 h-2 mb-0.5 rounded-full bg-red-500"></span>
-                </label>
+<aside class="w-2/8 bg-white rounded-xl p-0 flex flex-col h-full overflow-hidden">
+
+    <!--This is the top selector at the top-->
+    <div class="bg-white rounded-sm">
+        <div class="grid grid-rows-3 p-3">
+            <h2>@(SelectedMember is not null ? SelectedMember.Guid.ToString() : "No member selected")</h2>
+            <a>@(SelectedMember is not null ? $"{FormatDim(SelectedMember.LengthMm)} x {FormatDim(SelectedMember.WidthMm)} x {FormatDim(SelectedMember.HeightMm)} Beam" : "")</a>
+            <a>Area 3 - CV-300 Corridor</a>
+        </div>
+
+        <div class="flex gap-2 py-1 px-2">
+            <div class="w-1/3 h-12 rounded-sm bg-green-200 border border-green-600 text-green-700 flex items-center justify-center">C4 - Good</div>
+            <div class="w-1/3 h-12 rounded-sm bg-green-200 border border-green-600 text-green-700 flex items-center justify-center">P4 - Low</div>
+            <div class="w-1/3 h-12 rounded-sm bg-green-200 border border-green-600 text-green-700 flex items-center justify-center">Sensor Warning</div>
+        </div>
+
+        <div class="px-2 pb-2">
+            <div class="grid grid-cols-2 gap-2 mt-2">
+
+                <div class="w-full h-14 px-2 pb-2 rounded-sm border border-gray-300">
+                    <h2 class="text-gray-400">Profile</h2>
+                    <a class="text-gray-800 font-medium">@(SelectedMember is not null ? $"{FormatDim(SelectedMember.LengthMm)} x {FormatDim(SelectedMember.WidthMm)} x {FormatDim(SelectedMember.HeightMm)}" : "-")</a>
+                </div>
+
+                <div class="w-full h-14 px-2 pb-2 rounded-sm border border-gray-300">
+                    <h2 class="text-gray-400">Mass</h2>
+                    <a class="text-gray-800 font-medium">@(SelectedMember is not null ? $"{SelectedMember.WeightT * 1000:0.#} Kg" : "-")</a>
+                </div>
+
+                <div class="w-full h-14 px-2 pb-2 rounded-sm border border-gray-300">
+                    <h2 class="text-gray-400">Paint Area</h2>
+                    <a class="text-gray-800 font-medium">@(SelectedMember is not null ? $"{SelectedMember.AreaPerTonM2:0.#} m²" : "-")</a>
+                </div>
+
+                <div class="w-full h-14 px-2 pb-2 rounded-sm border border-gray-300">
+                    <h2 class="text-gray-400">Length</h2>
+                    <a class="text-gray-800 font-medium">@(SelectedMember is not null ? $"{SelectedMember.LengthMm / 1000:0.#} m" : "-")</a>
+                </div>
 
             </div>
+        </div>
+    </div>
 
-</details>
+    <!--This is the inspoection history-->
 
-</div>
+    <div class="rounded-sm flex flex-col flex-1 min-h-0 border-t border-gray-300">
 
-<!--This the bottom part that will change alot -->
-
-    <div>
-        <!--Memebrs part where its determined by how many memebers are selected-->
-
-           <div class="px-3 h-7 ">
-               <a class="text-gray-500 text-sm">@Members.Count Members</a>
-           </div>
-
-           <!--This is the members part where they are displayed-->
-
-           @foreach (var member in Members)
-           {
-               <div @onclick="() => ToggleSelected(member.Guid)"
-                    class="w-full cursor-pointer pb-1 border-l-4
-                           @(selectedGuid == member.Guid ? "bg-gray-200" : "bg-white")"
-                    style="border-left-color: @(selectedGuid == member.Guid ? "#22c55e" : "transparent");">
-
-                   <div class="grid grid-rows-2 px-3 w-2/3">
-
-                       <div class="text-sm text-gray-500">
-                           @member.Name
-                       </div>
-
-                       <div class="grid grid-cols-4 text-sm gap-2">
-
-                           <div class="bg-red-100 border border-red-800 flex items-center justify-center">
-                               B1
-                           </div>
-
-                           <div class="col-span-2 text-sm bg-transparent">
-                               Beam
-                           </div>
-
-                       </div>
-
-                   </div>
-
-               </div>
-           }
-
-</div>
+        <!--This is condition and telemtry and work orders-->
+        <div class="flex w-full border-b border-gray-300">
+            <button class="flex-1 py-2 @(activeTab == Tab.Condition ? "text-blue-600 font-semibold" : "")"
+                    @onclick="() => activeTab = Tab.Condition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="activity" aria-hidden="true" class="lucide lucide-activity w-[11px] h-[11px] inline-flex"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"></path></svg>
+                Condition
+            </button>
+            <button class="flex-1 py-2 @(activeTab == Tab.Telemetry ? "text-blue-600 font-semibold" : "")"
+                    @onclick="() => activeTab = Tab.Telemetry">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="radio" aria-hidden="true" class="lucide lucide-radio w-[11px] h-[11px] inline-flex"><path d="M16.247 7.761a6 6 0 0 1 0 8.478"></path><path d="M19.075 4.933a10 10 0 0 1 0 14.134"></path><path d="M4.925 19.067a10 10 0 0 1 0-14.134"></path><path d="M7.753 16.239a6 6 0 0 1 0-8.478"></path><circle cx="12" cy="12" r="2"></circle></svg>
+                Telemetry
+            </button>
+            <button class="flex-1 py-2 @(activeTab == Tab.WorkOrders ? "text-blue-600 font-semibold" : "")"
+                    @onclick="() => activeTab = Tab.WorkOrders">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-text" aria-hidden="true" class="lucide lucide-file-text w-[11px] h-[11px] inline-flex"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+                Work Orders
+            </button>
+        </div>
 
 
-                </aside>
+        <div class="flex-1 min-h-0 overflow-hidden p-2">
+
+            @if (activeTab == Tab.Condition)
+            {
+                <!--Consition - Inspection History-->
+
+                <div class="h-full overflow-y-auto">
+
+                    <Condition />
+
+                </div>
+            }
+            else if (activeTab == Tab.Telemetry)
+            {
+                <!--Telemetry - displacement and vibration and the live displacement and the vibration RMS-->
+
+                <div class="h-full overflow-y-auto">
+
+                    <Telemetry/>
+                    
+                </div>
+            }
+            else if (activeTab == Tab.WorkOrders)
+            {
+                <!--Work Orders -->
+
+                <div class="h-full flex flex-col gap-3">
+
+                   <WorkOrders />
+
+                </div>
+            }
+
+        </div>
+    </div>
+</aside>
+
 
 @code {
+    private enum Tab { Condition, Telemetry, WorkOrders }
+    private Tab activeTab = Tab.Condition;
 
-    /// <summary>
-    /// The beams/members to list. Guid here is expected to be the
-    /// GUID (MS) form (a standard System.Guid), since that's what
-    /// the Trimble viewer's object-property lookups return.
-    /// </summary>
     [Parameter]
-    public List<MemberSummary> Members { get; set; } = new();
+    public LeftAside.MemberSummary? SelectedMember { get; set; }
 
-    /// <summary>
-    /// Raised when a member is selected in the list, so the viewer
-    /// can highlight/zoom to the matching object in the 3D model.
-    /// </summary>
-    [Parameter]
-    public EventCallback<Guid> OnMemberSelected { get; set; }
-
-    private Guid? selectedGuid = null;
-
-    private async Task ToggleSelected(Guid guid)
-    {
-        if (selectedGuid == guid)
-        {
-            selectedGuid = null;
-            return;
-        }
-
-        selectedGuid = guid;
-
-        await OnMemberSelected.InvokeAsync(guid);
-    }
-
-    public class MemberSummary
-    {
-        public Guid Guid { get; set; }
-        public string Name { get; set; } = string.Empty;
-
-        // From beamData.json - used by RightAside to show details for
-        // whichever member is currently selected.
-        public double LengthMm { get; set; }
-        public double WidthMm { get; set; }
-        public double HeightMm { get; set; }
-        public double NetSurfaceAreaM2 { get; set; }
-        public double AreaPerTonM2 { get; set; }
-        public double VolumeM3 { get; set; }
-        public double WeightT { get; set; }
-        public string CommonType { get; set; } = "BEAM";
-    }
-
+    // beamData.json stores dimensions in mm; the "Profile"/header line
+    // shows them as whole-mm values (e.g. "8598 x 60 x 60"), not
+    // converted to another unit.
+    private static string FormatDim(double valueMm) => $"{valueMm:0.#}";
 }
-
