@@ -1,38 +1,137 @@
-[
-  {
-    "name": "Beam Loss",
-    "guidIfc": "1Fx0$BG09F3hBzDmSr0GGD",
-    "commonType": "BEAM",
-    "lengthMm": 8598,
-    "widthMm": 60,
-    "heightMm": 60,
-    "netSurfaceAreaM2": 2.06,
-    "areaPerTonM2": 43.01,
-    "volumeM3": 0.01,
-    "weightT": 0.047
-  },
-  {
-    "name": "Web Section Loss",
-    "guidIfc": "2Mcc594wr9uuDfRolKnCLN",
-    "commonType": "BEAM",
-    "lengthMm": 1228,
-    "widthMm": 55,
-    "heightMm": 120,
-    "netSurfaceAreaM2": 0.54,
-    "areaPerTonM2": 32.66,
-    "volumeM3": 0,
-    "weightT": 0.016
-  },
-  {
-    "name": "Web Section Loss 2",
-    "guidIfc": "24XtgXH3f9RxNY$iv8$hHW",
-    "commonType": "BEAM",
-    "lengthMm": 1228,
-    "widthMm": 55,
-    "heightMm": 120,
-    "netSurfaceAreaM2": 0.54,
-    "areaPerTonM2": 32.66,
-    "volumeM3": 0,
-    "weightT": 0.016
-  }
-]
+
+
+export async function getAllFlattenedObjects() {
+    if (!workspaceAPI?.viewer) {
+        console.error(
+            "[Trimble Objects] Viewer is unavailable."
+        );
+
+        return [];
+    }
+
+    try {
+        const modelGroups =
+            await workspaceAPI.viewer.getObjects();
+
+        const allObjects = [];
+
+        for (const modelGroup of modelGroups ?? []) {
+            const modelId =
+                modelGroup.modelId;
+
+            const runtimeIds =
+                (modelGroup.objects ?? [])
+                    .map(object => object.id)
+                    .filter(Number.isInteger);
+
+            if (
+                !modelId ||
+                runtimeIds.length === 0
+            ) {
+                continue;
+            }
+
+            const properties =
+                await getObjectPropertiesInBatches(
+                    modelId,
+                    runtimeIds
+                );
+
+            const flattened =
+                await flattenModelObjects(
+                    modelId,
+                    properties
+                );
+
+            allObjects.push(
+                ...flattened
+            );
+        }
+
+        console.info(
+            `[Trimble Objects] Returning ${allObjects.length} flattened objects.`
+        );
+
+        console.table(allObjects);
+
+        return allObjects;
+    } catch (error) {
+        console.error(
+            "[Trimble Objects] Failed:",
+            error
+        );
+
+        return [];
+    }
+}
+
+async function getObjectPropertiesInBatches(
+    modelId,
+    runtimeIds,
+    batchSize = 250
+) {
+    const properties = [];
+
+    for (
+        let index = 0;
+        index < runtimeIds.length;
+        index += batchSize
+    ) {
+        const batch =
+            runtimeIds.slice(
+                index,
+                index + batchSize
+            );
+
+        console.info(
+            `[Trimble Objects] Loading properties ${index + 1}-${index + batch.length} of ${runtimeIds.length}.`
+        );
+
+        try {
+            const batchProperties =
+                await workspaceAPI.viewer
+                    .getObjectProperties(
+                        modelId,
+                        batch
+                    );
+
+            if (Array.isArray(batchProperties)) {
+                properties.push(
+                    ...batchProperties
+                );
+            }
+        } catch (error) {
+            console.error(
+                `[Trimble Objects] Property batch failed for model ${modelId}:`,
+                batch,
+                error
+            );
+        }
+    }
+
+    return properties;
+}
+
+async function flattenModelObjects(
+    modelId,
+    objects
+) {
+    const runtimeIds =
+        objects
+            .map(object => object.id)
+            .filter(Number.isInteger);
+
+    const guidMap =
+        await getMsGuidsByRuntimeId(
+            modelId,
+            runtimeIds
+        );
+
+    return objects.map(object =>
+        flattenTrimbleObject(
+            modelId,
+            object,
+            guidMap.get(object.id) ?? null
+        )
+    );
+}
