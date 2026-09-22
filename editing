@@ -1,111 +1,46 @@
-2026-09-21T12:47:53.0485811Z State: Starting, Action: EstablishingSiteNetworks, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: , DetailsLevel: INFO
-2026-09-21T12:47:55.2271541Z State: Starting, Action: StartingMsiContainer, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: , DetailsLevel: INFO
-2026-09-21T12:48:02.1364838Z State: Starting, Action: StartingSiteContainers, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: , DetailsLevel: INFO
-2026-09-21T12:48:02.1366587Z Container start method called.
-2026-09-21T12:48:02.1367024Z State: Starting, Action: PullingImage, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: Pulling image 10.1.0.4:13209/appsvc/dotnetcore:10.0_20260812.3.tuxprod for paramaticremotecontrolcentre., DetailsLevel: INFO
-2026-09-21T12:48:02.1367908Z Establishing network.
-2026-09-21T12:48:02.1368647Z Pulling image: appsvc/dotnetcore:10.0_20260812.3.tuxprod.
-2026-09-21T12:48:02.3511983Z Container is starting.
-2026-09-21T12:48:02.3512604Z State: Starting, Action: MountingVolumes, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: Mounting volumes for paramaticremotecontrolcentre., DetailsLevel: INFO
-2026-09-21T12:48:02.3513305Z Establishing user namespace if not established already.
-2026-09-21T12:48:02.3514162Z Establishing network if not established already.
-2026-09-21T12:48:02.3515079Z Mounting volumes.
-2026-09-21T12:48:02.3516029Z Nested mountpoint 
-2026-09-21T12:48:02.3642197Z Nested mountpoint volatile/logs
-2026-09-21T12:48:02.3969200Z Nested mountpoint 
-2026-09-21T12:48:02.8399226Z Nested mountpoint 
-2026-09-21T12:48:02.8545466Z Nested mountpoint 
-2026-09-21T12:48:02.8624849Z Nested mountpoint 
-2026-09-21T12:48:03.4039243Z State: Starting, Action: CreatingContainer, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: Finished pulling container image and mounting volumes for paramaticremotecontrolcentre. Allocatinng the rest of the container resources to finish container creation., DetailsLevel: INFO
-2026-09-21T12:48:03.4043497Z Creating container.
-2026-09-21T12:48:03.4044380Z Creating pipes for streaming container io.
-2026-09-21T12:48:03.4045055Z Creating stdout named pipe at /podr/container/pipe/4de886618845_paramaticremotecontrolcentre/stdout_aa38caf6f09c4d889904b5f090370618.
-2026-09-21T12:48:03.4051848Z Successfully created stdout named pipe at: /podr/container/pipe/4de886618845_paramaticremotecontrolcentre/stdout_aa38caf6f09c4d889904b5f090370618.
-2026-09-21T12:48:03.4052427Z Opening named pipe /podr/container/pipe/4de886618845_paramaticremotecontrolcentre/stdout_aa38caf6f09c4d889904b5f090370618 for reading in non-blocking mode.
-2026-09-21T12:48:03.4053444Z Successfully opened named pipe: /podr/container/pipe/4de886618845_paramaticremotecontrolcentre/stdout_aa38caf6f09c4d889904b5f090370618.
-2026-09-21T12:48:03.4054049Z Successfully removed non-blocking flag from /podr/container/pipe/4de886618845_paramaticremotecontrolcentre/stdout_aa38caf6f09c4d889904b5f090370618.
-2026-09-21T12:48:03.4055027Z Creating stderr named pipe at /podr/container/pipe/4de886618845_paramaticremotecontrolcentre/stderr_ced5964ecc2f49e8a5a1dcefd456928c.
-2026-09-21T12:48:03.4056065Z Successfully created stderr named pipe at: /podr/container/pipe/4de886618845_paramaticremotecontrolcentre/stderr_ced5964ecc2f49e8a5a1dcefd456928c.
-2026-09-21T12:48:03.4056673Z Opening named pipe /podr/container/pipe/4de886618845_paramaticremotecontrolcentre/stderr_ced5964ecc2f49e8a5a1dcefd456928c for reading in non-blocking mode.
-2026-09-21T12:48:03.4057334Z Successfully opened named pipe: /podr/container/pipe/4de886618845_paramaticremotecontrolcentre/stderr_ced5964ecc2f49e8a5a1dcefd456928c.
-2026-09-21T12:48:03.4057837Z Successfully removed non-blocking flag from /podr/container/pipe/4de886618845_paramaticremotecontrolcentre/stderr_ced5964ecc2f49e8a5a1dcefd456928c.
-2026-09-21T12:48:03.4058644Z Creating container with image: appsvc/dotnetcore:10.0_20260812.3.tuxprod from registry: 10.1.0.4:13209 and fully qualified image name: 10.1.0.4:13209/appsvc/dotnetcore:10.0_20260812.3.tuxprod
-2026-09-21T12:48:04.5772316Z Starting container: 4de886618845_paramaticremotecontrolcentre.
-2026-09-21T12:48:04.6484527Z Starting watchers and probes.
-2026-09-21T12:48:04.6502720Z Starting metrics collection.
-2026-09-21T12:48:04.6503809Z Container is running.
-2026-09-21T12:48:04.6504451Z State: Starting, Action: CreatingContainer, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: Container paramaticremotecontrolcentre successfully created and is running., DetailsLevel: INFO
-2026-09-21T12:48:04.7955123Z Container start method finished after 2658 ms.
-2026-09-21T12:48:04.7976161Z State: Starting, Action: InitiatingSiteWarmUpProbe, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: Container paramaticremotecontrolcentre successfully created and is running., DetailsLevel: INFO
-2026-09-21T12:48:04.8029813Z State: Starting, Action: WaitingForSiteWarmUpProbeSuccess, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: Pinging warmup path to ensure container is ready to receive requests., DetailsLevel: INFO
-2026-09-21T12:48:07.4599596Z Site startup probe failed after 2.6354552 seconds.
-2026-09-21T12:48:08.7179887Z State: Starting, Action: WaitingForSiteWarmUpProbeSuccess, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Pinging warmup path to ensure container is ready to receive requests., DetailsLevel: ERR
-2026-09-21T12:48:08.7343371Z Failed to start site. Revert by stopping site.
-2026-09-21T12:48:08.7413425Z State: Stopping, Action: StoppingSite, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Pinging warmup path to ensure container is ready to receive requests., DetailsLevel: ERR
-2026-09-21T12:48:08.7463890Z State: Stopping, Action: StoppingSiteContainers, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Pinging warmup path to ensure container is ready to receive requests., DetailsLevel: ERR
-2026-09-21T12:48:08.7473863Z Container is terminating. Grace period: 5 seconds.
-2026-09-21T12:48:08.8089214Z Stop and delete container. Retry count = 0
-2026-09-21T12:48:08.8096997Z Stopping container: 4de886618845_paramaticremotecontrolcentre.
-2026-09-21T12:48:14.6658145Z Deleting container: 4de886618845_paramaticremotecontrolcentre. Retry count = 0
-2026-09-21T12:48:15.2112462Z Container spec TerminationMessagePolicy  path 
-2026-09-21T12:48:15.2305270Z Container is terminated. Total time elapsed: 6478 ms.
-2026-09-21T12:48:15.2307808Z Site container: paramaticremotecontrolcentre terminated during site startup.
-2026-09-21T12:48:15.2334949Z State: Stopping, Action: CancellingStartup, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Site container: paramaticremotecontrolcentre terminated during site startup. Cancelling site startup., DetailsLevel: ERR
-2026-09-21T12:48:17.4564252Z Site container: paramaticremotecontrolcentre_managedIdentity terminated during site startup.
-2026-09-21T12:48:17.4565362Z State: Stopping, Action: CancellingStartup, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Site container: paramaticremotecontrolcentre terminated during site startup. Cancelling site startup., DetailsLevel: ERR
-2026-09-21T12:48:17.4569864Z Site: paramaticremotecontrolcentre stopped.
-2026-09-21T12:48:42.3835766Z State: Stopping, Action: StoppingSite, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: Site started at 09/16/2026 05:56:05 (UTC), DetailsLevel: INFO
-2026-09-21T12:48:42.3869514Z State: Stopping, Action: StoppingSiteContainers, LastError: , LastErrorTimestamp: 01/01/0001 00:00:00, LastErrorDetails: , Details: Site started at 09/16/2026 05:56:05 (UTC), DetailsLevel: INFO
-2026-09-21T12:48:42.3870359Z Container is terminating. Grace period: 5 seconds.
-2026-09-21T12:48:42.4021292Z Stop and delete container. Retry count = 0
-2026-09-21T12:48:42.4022811Z Stopping container: b4458e751b18_paramaticremotecontrolcentre.
-2026-09-21T12:48:47.5594204Z Deleting container: b4458e751b18_paramaticremotecontrolcentre. Retry count = 0
-2026-09-21T12:48:47.6509229Z Container spec TerminationMessagePolicy  path 
-2026-09-21T12:48:47.6547495Z Container is terminated. Total time elapsed: 5263 ms.
-2026-09-21T12:48:48.2469448Z Site: paramaticremotecontrolcentre stopped.
-2026-09-21T12:49:09.2664499Z State: Starting, Action: EstablishingSiteNetworks, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Site stopped at 09/21/2026 12:48:20 (UTC), DetailsLevel: ERR
-2026-09-21T12:49:10.0448394Z State: Starting, Action: StartingMsiContainer, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Site stopped at 09/21/2026 12:48:20 (UTC), DetailsLevel: ERR
-2026-09-21T12:49:14.2560505Z State: Starting, Action: StartingSiteContainers, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Site stopped at 09/21/2026 12:48:20 (UTC), DetailsLevel: ERR
-2026-09-21T12:49:14.2561528Z Container start method called.
-2026-09-21T12:49:14.2561904Z State: Starting, Action: PullingImage, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Pulling image 10.1.0.5:13209/appsvc/dotnetcore:10.0_20260812.3.tuxprod for paramaticremotecontrolcentre., DetailsLevel: INFO
-2026-09-21T12:49:14.2562532Z Establishing network.
-2026-09-21T12:49:14.2563385Z Pulling image: appsvc/dotnetcore:10.0_20260812.3.tuxprod.
-2026-09-21T12:49:14.3096983Z Container is starting.
-2026-09-21T12:49:14.3097901Z State: Starting, Action: MountingVolumes, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Mounting volumes for paramaticremotecontrolcentre., DetailsLevel: INFO
-2026-09-21T12:49:14.3098490Z Establishing user namespace if not established already.
-2026-09-21T12:49:14.3098979Z Establishing network if not established already.
-2026-09-21T12:49:14.3099818Z Mounting volumes.
-2026-09-21T12:49:14.3100585Z Nested mountpoint 
-2026-09-21T12:49:14.3145205Z Nested mountpoint volatile/logs
-2026-09-21T12:49:14.3197437Z Nested mountpoint 
-2026-09-21T12:49:14.3200878Z Nested mountpoint 
-2026-09-21T12:49:14.3225431Z Nested mountpoint 
-2026-09-21T12:49:14.3488788Z Nested mountpoint 
-2026-09-21T12:49:14.5886527Z State: Starting, Action: CreatingContainer, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Finished pulling container image and mounting volumes for paramaticremotecontrolcentre. Allocatinng the rest of the container resources to finish container creation., DetailsLevel: INFO
-2026-09-21T12:49:14.5887340Z Creating container.
-2026-09-21T12:49:14.5887877Z Creating pipes for streaming container io.
-2026-09-21T12:49:14.5888402Z Creating stdout named pipe at /podr/container/pipe/b4cdb52660fc_paramaticremotecontrolcentre/stdout_7a030bc7b70e420686770230b19cdc13.
-2026-09-21T12:49:14.5889977Z Successfully created stdout named pipe at: /podr/container/pipe/b4cdb52660fc_paramaticremotecontrolcentre/stdout_7a030bc7b70e420686770230b19cdc13.
-2026-09-21T12:49:14.5890494Z Opening named pipe /podr/container/pipe/b4cdb52660fc_paramaticremotecontrolcentre/stdout_7a030bc7b70e420686770230b19cdc13 for reading in non-blocking mode.
-2026-09-21T12:49:14.5891162Z Successfully opened named pipe: /podr/container/pipe/b4cdb52660fc_paramaticremotecontrolcentre/stdout_7a030bc7b70e420686770230b19cdc13.
-2026-09-21T12:49:14.5891657Z Successfully removed non-blocking flag from /podr/container/pipe/b4cdb52660fc_paramaticremotecontrolcentre/stdout_7a030bc7b70e420686770230b19cdc13.
-2026-09-21T12:49:14.6091798Z Creating stderr named pipe at /podr/container/pipe/b4cdb52660fc_paramaticremotecontrolcentre/stderr_f3f03cac9d5f46e8a88ffb0ba612c990.
-2026-09-21T12:49:14.6092916Z Successfully created stderr named pipe at: /podr/container/pipe/b4cdb52660fc_paramaticremotecontrolcentre/stderr_f3f03cac9d5f46e8a88ffb0ba612c990.
-2026-09-21T12:49:14.6093389Z Opening named pipe /podr/container/pipe/b4cdb52660fc_paramaticremotecontrolcentre/stderr_f3f03cac9d5f46e8a88ffb0ba612c990 for reading in non-blocking mode.
-2026-09-21T12:49:14.6094109Z Successfully opened named pipe: /podr/container/pipe/b4cdb52660fc_paramaticremotecontrolcentre/stderr_f3f03cac9d5f46e8a88ffb0ba612c990.
-2026-09-21T12:49:14.6094659Z Successfully removed non-blocking flag from /podr/container/pipe/b4cdb52660fc_paramaticremotecontrolcentre/stderr_f3f03cac9d5f46e8a88ffb0ba612c990.
-2026-09-21T12:49:14.6095645Z Creating container with image: appsvc/dotnetcore:10.0_20260812.3.tuxprod from registry: 10.1.0.5:13209 and fully qualified image name: 10.1.0.5:13209/appsvc/dotnetcore:10.0_20260812.3.tuxprod
-2026-09-21T12:49:15.1605217Z Starting container: b4cdb52660fc_paramaticremotecontrolcentre.
-2026-09-21T12:49:15.1740557Z Starting watchers and probes.
-2026-09-21T12:49:15.1748582Z Starting metrics collection.
-2026-09-21T12:49:15.1750209Z Container is running.
-2026-09-21T12:49:15.1751742Z State: Starting, Action: CreatingContainer, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Container paramaticremotecontrolcentre successfully created and is running., DetailsLevel: INFO
-2026-09-21T12:49:15.2090819Z Container start method finished after 952 ms.
-2026-09-21T12:49:15.2095700Z State: Starting, Action: InitiatingSiteWarmUpProbe, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Container paramaticremotecontrolcentre successfully created and is running., DetailsLevel: INFO
-2026-09-21T12:49:15.2096268Z State: Starting, Action: WaitingForSiteWarmUpProbeSuccess, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Pinging warmup path to ensure container is ready to receive requests., DetailsLevel: INFO
-2026-09-21T12:49:24.4920769Z Site startup probe succeeded after 9.282201 seconds.
-2026-09-21T12:49:24.8337307Z State: Starting, Action: WarmUpProbeSucceeded, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Site startup probe succeeded after 9.282201 seconds., DetailsLevel: INFO
-2026-09-21T12:49:25.0712994Z Site is running with deployment version: 61a3a5d8-3731-4816-9925-c0099232913b
-2026-09-21T12:49:25.0719520Z Site started.
-2026-09-21T12:49:25.0723811Z State: Started, Action: None, LastError: ContainerStartupFailure, LastErrorTimestamp: 09/21/2026 12:48:08, LastErrorDetails: The container did not complete startup successfully. Please inspect your container logs for more details., Details: Site started at 09/21/2026 12:49:25 (UTC), DetailsLevel: INFO
-2026-09-21T12:49:25.0966407Z Site is running with patch version DOTNETCORE-10.0.11
+@page "/Error"
+@using System.Diagnostics
+@using Microsoft.AspNetCore.Diagnostics
+
+<PageTitle>Error</PageTitle>
+
+<h1 class="text-danger">Error.</h1>
+<h2 class="text-danger">An error occurred while processing your request.</h2>
+
+@if (ShowRequestId)
+{
+    <p>
+        <strong>Request ID:</strong> <code>@RequestId</code>
+    </p>
+}
+
+@if (ExceptionText is not null)
+{
+    <h3>Temporary diagnostic — remove this block once done</h3>
+    <pre style="white-space: pre-wrap; background:#f5f5f5; padding:1em; border:1px solid #ccc;">@ExceptionText</pre>
+}
+
+<h3>Development Mode</h3>
+<p>
+    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
+</p>
+
+@code{
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+    private string? ExceptionText { get; set; }
+
+    protected override void OnInitialized()
+    {
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+
+        var feature = HttpContext?.Features.Get<IExceptionHandlerPathFeature>();
+        if (feature?.Error is not null)
+        {
+            ExceptionText = $"Path: {feature.Path}\n\n{feature.Error}";
+        }
+    }
+}
