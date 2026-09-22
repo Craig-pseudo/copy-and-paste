@@ -10,7 +10,7 @@
     <Viewport @ref="_viewportRef" AccessToken="@AccessToken" ProjectId="@ProjectId" />
 
     <!-- Right side -->
-    <RightAside />
+    <RightAside SelectedMember="@_selectedMember" />
 
 </section>
 
@@ -23,6 +23,7 @@
     public string? ProjectId { get; set; }
 
     private Viewport? _viewportRef;
+    private LeftAside.MemberSummary? _selectedMember;
 
     // TODO: replace with the real beam list once it's loaded from
     // beamData.json / the live model instead of hardcoded here.
@@ -33,12 +34,37 @@
         new() { Guid = Guid.Parse("84877aa1-443a-496f-b5e2-fece48feb460"), Name = "Web Section Loss 2" }
     };
 
-    private async Task HandleMemberSelected(Guid guid)
+    private void HandleMemberSelected(Guid guid)
     {
+        // Update and render the right-side panel immediately - it must not
+        // wait on the 3D viewer. Highlighting the object in the Trimble
+        // viewer can take several seconds (it walks every loaded object to
+        // build a GUID index the first time) or fail outright, and none of
+        // that should block or hide the right-side detail update.
         _selectedMember = _members.FirstOrDefault(m => m.Guid == guid);
+        StateHasChanged();
+
         if (_viewportRef is not null)
         {
-            await _viewportRef.SelectObjectAsync(guid);
+            // Fire-and-forget: run the viewer selection in the background so
+            // an exception or a long-running call here can never prevent
+            // (or delay) the right panel from having already updated above.
+            _ = SelectInViewerAsync(guid);
+        }
+    }
+
+    private async Task SelectInViewerAsync(Guid guid)
+    {
+        try
+        {
+            if (_viewportRef is not null)
+            {
+                await _viewportRef.SelectObjectAsync(guid);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"BIMViewport: failed to select {guid} in the 3D viewer: {ex.Message}");
         }
     }
 
