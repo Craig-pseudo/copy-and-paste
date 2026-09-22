@@ -1,1 +1,10 @@
 https://paramaticremotecontrolc-plantvision-c7grdrc5c6csdkdy.centralus-01.azurewebsites.net/js/trimbleDashboard.js
+
+Error.
+An error occurred while processing your request.
+Request ID: 00-b8740fdc2c1181ff96f00c2091c69aab-8c2d8290911a0ac7-00
+
+Development Mode
+Swapping to Development environment will display more detailed information about the error that occurred.
+
+The Development environment shouldn't be enabled for deployed applications. It can result in displaying sensitive information from exceptions to end users. For local debugging, enable the Development environment by setting the ASPNETCORE_ENVIRONMENT environment variable to Development and restarting the app.
