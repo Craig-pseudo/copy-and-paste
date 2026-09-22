@@ -1,4 +1,3 @@
-
 @using Microsoft.AspNetCore.Components
 @using Microsoft.JSInterop
 
@@ -458,6 +457,7 @@
     private IJSObjectReference? _trimbleModule;
 
     private bool _viewerInitialized;
+    private bool _viewerInitializing;
 
 
 
@@ -646,6 +646,15 @@
         if (_viewerInitialized)
             return;
 
+        // OnParametersSetAsync can re-fire on every re-render anywhere
+        // up the tree (a dropdown toggle, a list selection, etc.), not
+        // just when AccessToken/ProjectId actually change. Without this
+        // guard, an overlapping call could start while the first one is
+        // still awaiting init3DViewer, causing the iframe to be reset
+        // mid-load - repeatedly - which looks like an endless spinner.
+        if (_viewerInitializing)
+            return;
+
         if (string.IsNullOrWhiteSpace(AccessToken))
         {
             Console.WriteLine("Trimble: waiting for access token.");
@@ -660,6 +669,8 @@
 
         if (_trimbleModule is null)
             return;
+
+        _viewerInitializing = true;
 
         try
         {
@@ -688,6 +699,10 @@
         {
             Console.WriteLine(
                 $"Trimble viewer initialization error: {ex}");
+        }
+        finally
+        {
+            _viewerInitializing = false;
         }
     }
 
