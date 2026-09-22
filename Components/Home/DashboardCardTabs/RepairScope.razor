@@ -1,0 +1,46 @@
+﻿<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+
+    <h3 class="text-[10px] font-medium text-gray-500 tracking-wide">
+        TOTAL REPAIR SCOPE
+    </h3>
+
+    <div class="flex gap-6 mt-2">
+        <div>
+            <span class="text-2xl font-bold text-orange-600">@repairScopePaintArea</span>
+            <p class="text-[10px] text-gray-500 leading-tight">m² paint surface</p>
+        </div>
+        <div>
+            <span class="text-2xl font-bold text-orange-500">@repairScopeSteelTonnes</span>
+            <p class="text-[10px] text-gray-500 leading-tight">t steel replacement</p>
+        </div>
+    </div>
+
+
+    <!-- progress bar: width % driven by membersInScope / totalMembers -->
+    <div class="w-full h-1 bg-gray-100 rounded-full mt-3 overflow-hidden">
+        <div class="h-full bg-orange-400 rounded-full"
+             style="width: @GetScopeProgressPercent()%"></div>
+    </div>
+
+    <p class="text-[10px] text-gray-500 mt-1">
+        @membersInScope/@totalMembersForScope members in scope
+    </p>
+
+</div>
+
+@code {
+
+    // CARD 3 — TOTAL REPAIR SCOPE
+
+    private double repairScopePaintArea = 125;
+    private double repairScopeSteelTonnes = 2.5;
+    private int membersInScope = 8;
+    private int totalMembersForScope = 12;
+
+
+    private double GetScopeProgressPercent()
+    {
+        if (totalMembersForScope == 0) return 0;
+        return (double)membersInScope / totalMembersForScope * 100;
+    }
+}

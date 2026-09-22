@@ -1,0 +1,9 @@
+﻿{
+  "title": "Vision",
+  "description": "A simple remote control centre for managing plant data.",
+  "url": "https://paramaticremotecontrolc-plantvision-c7grdrc5c6csdkdy.centralus-01.azurewebsites.net",
+  "icon": "https://paramaticremotecontrolc-plantvision-c7grdrc5c6csdkdy.centralus-01.azurewebsites.net/icon.png",
+  "enabled": true,
+  "configCommand": "settings",
+  "extensionType": [ "project" ]
+}

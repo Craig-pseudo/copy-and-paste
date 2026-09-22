@@ -1,0 +1,296 @@
+﻿@using Vision.Components.Home.RightAsideTabs
+@inject IJSRuntime JS
+
+<div class="flex flex-col gap-3">
+
+   <!-- alarm summary -->
+<div class="grid grid-cols-2 gap-2">
+    <div class="border border-red-300 bg-red-50 rounded-sm p-2">
+        <p class="text-[11px] font-semibold text-gray-400 tracking-wide">DISPLACEMENT</p>
+        <p class="text-xl font-bold text-red-600 mt-1">
+            +@liveDisplacement.ToString("0.0") mm
+        </p>
+        <p class="text-[11px] text-red-400 mt-0.5">
+            Alarm &gt; @displacementAlarmThreshold.ToString("0.#") mm
+        </p>
+    </div>
+
+    <div class="border border-orange-300 bg-orange-50 rounded-sm p-2">
+        <p class="text-[11px] font-semibold text-gray-400 tracking-wide">VIBRATION</p>
+        <p class="text-xl font-bold text-orange-500 mt-1">
+            @liveVibration.ToString("0.0") mm/s
+        </p>
+        <p class="text-[11px] text-orange-400 mt-0.5">
+            Alarm &gt; @vibrationAlarmThreshold.ToString("0.#") mm/s
+        </p>
+    </div>
+</div>
+
+<!-- displacement -->
+<div class="bg-white rounded-sm p-2">
+    <p class="text-[11px] font-semibold text-gray-400 tracking-wide mb-1">
+        LIVE DISPLACEMENT (MM) — LAST 15 MIN
+    </p>
+
+    @((MarkupString)GetDisplacementChartSvg())
+
+    <div class="flex justify-between px-1 mt-1">
+        @foreach (var label in GetXAxisLabels(displacementSeries))
+        {
+            <span class="text-[10px] text-gray-400">@label</span>
+        }
+    </div>
+</div>
+
+<!-- vibration -->
+<div class="bg-white rounded-sm p-2">
+    <p class="text-[11px] font-semibold text-gray-400 tracking-wide mb-1">
+        VIBRATION RMS (MM/S) — LAST 15 MIN
+    </p>
+
+    @((MarkupString)GetVibrationChartSvg())
+
+    <div class="flex justify-between px-1 mt-1">
+        @foreach (var label in GetXAxisLabels(vibrationSeries))
+        {
+            <span class="text-[10px] text-gray-400">@label</span>
+        }
+    </div>
+</div>
+
+<!-- alarms -->
+<div class="bg-white rounded-sm p-2">
+    <p class="text-[11px] font-semibold text-gray-400 tracking-wide mb-2">
+        SENSOR ALARMS
+    </p>
+
+    @if (!sensorAlarms.Any())
+    {
+        <p class="text-xs text-gray-400">No alarms recorded.</p>
+    }
+    else
+    {
+        <div class="space-y-2 pb-2">
+            @foreach (var alarm in sensorAlarms.OrderByDescending(x => x.Timestamp))
+            {
+                <div class="flex items-start gap-2">
+                    <span class="mt-1 w-2 h-2 rounded-full flex-shrink-0
+                        @(alarm.IsActive ? "bg-red-500" : "bg-gray-300")">
+                    </span>
+
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs font-medium text-gray-800">
+                                @alarm.Message
+                            </span>
+
+                            <span class="text-[10px] text-gray-400 whitespace-nowrap">
+                                @alarm.Timestamp.ToString("HH:mm")
+                            </span>
+                        </div>
+
+                        <span class="text-[10px]
+                            @(alarm.IsActive ? "text-red-500" : "text-gray-400")">
+                            @(alarm.IsActive ? "Active" : "Cleared")
+                        </span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+
+</div>
+
+
+@code {
+    private enum Tab { Condition, Telemetry, WorkOrders }
+    private Tab activeTab = Tab.Condition;
+
+    // TELEMETRY TAB — data + chart helpers
+
+    private double liveDisplacement = 18.4;
+    private double liveVibration = 42.1;
+    private double displacementAlarmThreshold = 15;   // mm
+    private double vibrationAlarmThreshold = 30;      // mm/s
+
+    private const double chartTop = 5;
+    private const double chartHeight = 100;
+    private const double chartLeft = 30;
+    private const double chartRight = 400;
+    private const int axisLabelCount = 5;
+
+    // Single source of truth for the plotted range — labels are generated
+    // FROM these, so the gridlines and the polyline can never disagree again.
+    private double displacementMin = 9;
+    private double displacementMax = 17;
+
+    private double vibrationMin = 10;
+    private double vibrationMax = 26;
+
+    private record Reading(DateTime Timestamp, double Value);
+
+    // NOTE: if live readings are pushed in from a timer/SignalR callback,
+    // always insert with this pattern (or re-sort before rendering) —
+    // do not assume insertion order matches chronological order.
+    private List<Reading> displacementSeries = new()
+    {
+        new(DateTime.Today.AddHours(7).AddMinutes(30), 9.6),
+        new(DateTime.Today.AddHours(8).AddMinutes(45), 9.9),
+        new(DateTime.Today.AddHours(10).AddMinutes(0), 10.0),
+        new(DateTime.Today.AddHours(11).AddMinutes(15), 12.0),
+    };
+
+    private List<Reading> vibrationSeries = BuildDemoVibrationSeries();
+
+    private static List<Reading> BuildDemoVibrationSeries()
+    {
+        var values = new List<double>
+        {
+            21.5, 20.6, 19.4, 18.2, 16.8, 15.4, 14.2, 13.5, 13.8, 14.9,
+            16.3, 17.8, 19.5, 21.2, 23.0, 24.6, 25.4, 24.8, 25.6, 25.1,
+            24.3, 23.2, 21.8, 20.4, 19.0, 17.8, 16.9, 16.1, 15.4, 14.9
+        };
+
+        var start = DateTime.Today.AddHours(7).AddMinutes(30);
+        var end = DateTime.Today.AddHours(13).AddMinutes(45);
+        var step = (end - start) / (values.Count - 1);
+
+        return values
+            .Select((v, i) => new Reading(start + step * i, v))
+            .ToList();
+    }
+
+    private record SensorAlarm(string Message, DateTime Timestamp, bool IsActive);
+
+    private List<SensorAlarm> sensorAlarms = new()
+    {
+        new("Displacement exceeded 15mm threshold", DateTime.Today.AddHours(11).AddMinutes(15), true),
+        new("Vibration RMS spike detected", DateTime.Today.AddHours(11).AddMinutes(20), true),
+        new("Displacement returned within limits", DateTime.Today.AddHours(9).AddMinutes(5), false),
+    };
+
+    // --- shared chart helpers -------------------------------------------------
+
+    private string GetPolylinePoints(List<Reading> readings, double min, double max)
+    {
+        // Always sort by timestamp before plotting. X position is derived from
+        // index, so if the underlying list is ever out of chronological order
+        // (e.g. concurrent live-update writes), the line will zigzag/crisscross
+        // even though every individual value is correct.
+        var sorted = readings.OrderBy(r => r.Timestamp).ToList();
+        if (sorted.Count == 0) return string.Empty;
+        if (sorted.Count == 1)
+        {
+            double y = GetYForValue(sorted[0].Value, min, max);
+            return $"{chartLeft:0.##},{y:0.##}";
+        }
+
+        double usableWidth = chartRight - chartLeft;
+        var points = new List<string>();
+
+        for (int i = 0; i < sorted.Count; i++)
+        {
+            double x = chartLeft + (usableWidth / (sorted.Count - 1)) * i;
+            double y = GetYForValue(sorted[i].Value, min, max);
+            points.Add($"{x:0.##},{y:0.##}");
+        }
+
+        return string.Join(" ", points);
+    }
+
+    private double GetYForValue(double value, double min, double max)
+    {
+        double clamped = Math.Clamp(value, min, max);
+        double normalized = (clamped - min) / (max - min);
+        return chartTop + chartHeight - (normalized * chartHeight);
+    }
+
+    // Generates labels evenly spaced across [min, max] — guarantees the
+    // gridline text always matches the scale the polyline is plotted against.
+    private string[] GenerateAxisLabels(double min, double max, int count)
+    {
+        var labels = new string[count];
+        for (int i = 0; i < count; i++)
+        {
+            double value = min + (max - min) / (count - 1) * i;
+            labels[i] = value.ToString("0.#");
+        }
+        return labels;
+    }
+
+    private string[] GetXAxisLabels(List<Reading> readings, int count = 6)
+    {
+        var sorted = readings.OrderBy(r => r.Timestamp).ToList();
+        if (sorted.Count == 0) return Array.Empty<string>();
+
+        // Fewer points than requested labels: just show every timestamp we have
+        // instead of interpolating (interpolating here is what produced duplicates).
+        if (sorted.Count <= count)
+            return sorted.Select(r => r.Timestamp.ToString("HH:mm")).ToArray();
+
+        // More points than requested labels: pick evenly spaced DISTINCT indices.
+        var indices = new List<int>();
+        for (int i = 0; i < count; i++)
+        {
+            int idx = (int)Math.Round((sorted.Count - 1) * (i / (double)(count - 1)));
+            if (indices.Count == 0 || indices[^1] != idx)
+                indices.Add(idx);
+        }
+        return indices.Select(idx => sorted[idx].Timestamp.ToString("HH:mm")).ToArray();
+    }
+
+    private string RenderAxisGridAndLabels(double min, double max)
+    {
+        var labels = GenerateAxisLabels(min, max, axisLabelCount);
+        var sb = new System.Text.StringBuilder();
+
+        // labels[0] = min (bottom of chart) ... labels[last] = max (top of chart)
+        for (int i = 0; i < labels.Length; i++)
+        {
+            double value = min + (max - min) / (labels.Length - 1) * i;
+            double gy = GetYForValue(value, min, max);
+
+            sb.Append($"<line x1=\"{chartLeft}\" y1=\"{gy:0.##}\" x2=\"{chartRight}\" y2=\"{gy:0.##}\" stroke=\"#e5e7eb\" stroke-width=\"1\" />");
+            sb.Append($"<text x=\"{chartLeft - 4}\" y=\"{(gy + 3):0.##}\" text-anchor=\"end\" font-size=\"9\" fill=\"#9ca3af\">{labels[i]}</text>");
+        }
+
+        return sb.ToString();
+    }
+
+    // --- displacement chart -----------------------------------------------
+
+    private string GetDisplacementChartSvg()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<svg viewBox=\"0 0 400 130\" class=\"w-full h-auto\" preserveAspectRatio=\"none\">");
+
+        sb.Append(RenderAxisGridAndLabels(displacementMin, displacementMax));
+
+        double thresholdY = GetYForValue(displacementAlarmThreshold, displacementMin, displacementMax);
+        sb.Append($"<line x1=\"{chartLeft}\" y1=\"{thresholdY:0.##}\" x2=\"{chartRight}\" y2=\"{thresholdY:0.##}\" stroke=\"#f59e0b\" stroke-width=\"1.5\" stroke-dasharray=\"4,3\" />");
+
+        string points = GetPolylinePoints(displacementSeries, displacementMin, displacementMax);
+        sb.Append($"<polyline points=\"{points}\" fill=\"none\" stroke=\"#ef4444\" stroke-width=\"2\" stroke-linejoin=\"round\" stroke-linecap=\"round\" />");
+
+        sb.Append("</svg>");
+        return sb.ToString();
+    }
+
+    // --- vibration chart ----------------------------------------------------
+
+    private string GetVibrationChartSvg()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<svg viewBox=\"0 0 400 130\" class=\"w-full h-auto\" preserveAspectRatio=\"none\">");
+
+        sb.Append(RenderAxisGridAndLabels(vibrationMin, vibrationMax));
+
+        string points = GetPolylinePoints(vibrationSeries, vibrationMin, vibrationMax);
+        sb.Append($"<polyline points=\"{points}\" fill=\"none\" stroke=\"#f97316\" stroke-width=\"2\" stroke-linejoin=\"round\" stroke-linecap=\"round\" />");
+
+        sb.Append("</svg>");
+        return sb.ToString();
+    }
+}

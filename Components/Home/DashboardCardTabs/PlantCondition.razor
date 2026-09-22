@@ -1,0 +1,47 @@
+﻿<div class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+
+    <!-- percentage, styled by condition (red/orange/green via -->
+    <!-- GetConditionTextColor, same helper as before) -->
+    <span class="text-4xl font-bold flex-shrink-0 @GetConditionTextColor(plantConditionPercent)">
+        @plantConditionPercent%
+    </span>
+
+    <div class="flex flex-col">
+        <span class="text-[10px] text-gray-500 tracking-wide">
+            PLANT CONDITION INDEX
+        </span>
+
+        <span class="text-lg font-bold @GetConditionTextColor(plantConditionPercent)">
+            @plantConditionStatus
+        </span>
+
+        <span class="whitespace-nowrap text-[11px] text-gray-500">
+            @plantMembersAssessed members assessed
+        </span>
+    </div>
+
+</div>
+
+@code {
+    // CARD 1 — PLANT CONDITION INDEX
+
+    // -- current condition percentage (0-100), drives the arc gauge --
+    private int plantConditionPercent = 58;
+    private string plantConditionStatus = "DEGRADED";
+    private int plantMembersAssessed = 12;
+
+
+    private string GetConditionColor(int percent) => percent switch
+    {
+        < 40 => "#ef4444", // red-500
+        < 70 => "#f97316", // orange-500
+        _ => "#22c55e"     // green-500
+    };
+
+    private string GetConditionTextColor(int percent) => percent switch
+    {
+        < 40 => "text-red-600",
+        < 70 => "text-orange-600",
+        _ => "text-green-600"
+    };
+}

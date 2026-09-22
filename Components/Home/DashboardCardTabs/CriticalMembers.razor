@@ -1,0 +1,34 @@
+﻿<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+
+    <h3 class="text-[10px] font-medium text-gray-500 tracking-wide">
+        CRITICAL MEMBERS
+    </h3>
+
+    <div class="flex items-start gap-2 mt-2">
+        <span class="text-3xl font-bold text-red-600">@criticalMembersCount</span>
+        <div class="flex flex-col mt-1">
+            <span class="text-xs text-gray-500 leading-tight">@criticalMembersTag</span>
+            <span class="text-xs text-gray-500 leading-tight">require action</span>
+        </div>
+    </div>
+
+    <div class="flex gap-2 mt-3">
+        <span class="text-[10px] font-semibold px-2 py-1 rounded-sm bg-red-50 text-red-500 border border-red-200">
+            P1 @criticalP1Count members
+        </span>
+        <span class="text-[10px] font-semibold px-2 py-1 rounded-sm bg-amber-50 text-amber-600 border border-amber-200">
+            P2 @criticalP2Count members
+        </span>
+    </div>
+
+</div>
+
+@code {
+    // CARD 2 — CRITICAL MEMBERS
+
+
+    private int criticalMembersCount = 3;
+    private string criticalMembersTag = "P1/COND-1";
+    private int criticalP1Count = 3;
+    private int criticalP2Count = 3;
+}

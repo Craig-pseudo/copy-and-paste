@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StructureVision BIM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+
+    <!-- Tailwind Play CDN: no build step. Swap for a compiled build (npm i -D tailwindcss +
+         tailwind.config.js + `npx tailwindcss build`) once this is a real project. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // All "design tokens" from the original :root block, prefixed sv- so they never
+      // collide with Tailwind's built-in red/green/blue/slate/orange scales.
+      // Condition & priority use the SAME 1-5 hex ramp (data model reuses the scale),
+      // so sv-cond-N and sv-pri-N are defined once and referenced by both helpers.
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'sv-ground': '#F1F5F9',
+              'sv-surface': '#FFFFFF',
+              'sv-panel': '#F8FAFC',
+              'sv-panel-raised': '#F1F5F9',
+              'sv-border': '#E2E8F0',
+              'sv-border-bright': '#CBD5E1',
+              'sv-amber': '#D97706', 'sv-amber-dim': '#FEF3C7',
+              'sv-red': '#DC2626', 'sv-red-dim': '#FEE2E2',
+              'sv-orange': '#EA580C', 'sv-orange-dim': '#FFEDD5',
+              'sv-green': '#16A34A', 'sv-green-dim': '#DCFCE7',
+              'sv-blue': '#0284C7', 'sv-blue-dim': '#E0F2FE',
+              'sv-cyan': '#0891B2',
+              'sv-purple': '#7C3AED',
+              'sv-slate': '#64748B', 'sv-slate-dim': '#94A3B8',
+              'sv-ink': '#1E293B', 'sv-ink-strong': '#0F172A',
+              'sv-cond-1': '#DC2626', 'sv-cond-2': '#EA580C', 'sv-cond-3': '#D97706', 'sv-cond-4': '#65A30D', 'sv-cond-5': '#16A34A',
+              'sv-pri-1': '#DC2626', 'sv-pri-2': '#EA580C', 'sv-pri-3': '#D97706', 'sv-pri-4': '#65A30D', 'sv-pri-5': '#16A34A',
+              'sv-sensor-alarm': '#DC2626', 'sv-sensor-warning': '#D97706', 'sv-sensor-normal': '#16A34A',
+            },
+            fontFamily: {
+              display: ['"Barlow Condensed"', 'system-ui', 'sans-serif'],
+              body: ['Inter', 'system-ui', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            },
+            keyframes: {
+              blink: { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.15 } },
+              ticker: { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } },
+            },
+            animation: {
+              blink: 'blink 1.2s infinite',
+              'blink-slow': 'blink 2s infinite',
+              ticker: 'ticker 8s linear infinite',
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+        /* Only what Tailwind utilities genuinely can't express: scrollbar theming
+           and a couple of SVG canvas backgrounds that are cheaper as CSS than as
+           a wall of utility classes. Everything else below is Tailwind. */
+        html, body { margin:0; padding:0; height:100%; }
+        button, select, input { font: inherit; }
+        ::-webkit-scrollbar { width:4px; height:4px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:2px; }
+        ::-webkit-scrollbar-thumb:hover { background:#94A3B8; }
+        table { border-collapse: collapse; }
+    </style>
+</head>
+<body class="bg-sv-ground text-sv-ink font-body antialiased">
+<div id="app" class="flex flex-col h-screen bg-sv-ground overflow-hidden"></div>
+
+<script>
+/* ============================== DATA ============================== */
+/* Unchanged from the original — this is the app's data model, not presentation,
+   so it doesn't need to touch Tailwind at all. */
+
+const members = [
+  { id:'1', tag:'BEAM-CNV-042', type:'Conveyor', category:'Beam', area:'Area 3 – CV-300 Corridor', condition:1, priority:1, sensorStatus:'Alarm', length:12.4, mass:1104, paintArea:28.6, lastInspection:'2026-07-14', description:'Universal Beam 457×191×89', inspector:'D. Vickers', notes:'Section loss >30% mid-span. Corrosion through flange. Immediate repair required.', profile:{designation:'457×191×89 UB', standard:'AS/NZS 3679.1', depth:463, flangeWidth:192, webThick:10.5, flangeThick:17.7, kgPerM:89.3, ixx:41020, zxx:1770}, bimX:180, bimY:110, bimW:120, bimH:10, isHorizontal:true },
+  { id:'2', tag:'COL-PR-017', type:'Pipe Rack', category:'Column', area:'Area 1 – Process Pipe Rack North', condition:2, priority:2, sensorStatus:'Warning', length:8.0, mass:790, paintArea:19.2, lastInspection:'2026-06-02', description:'UC 203×203×60 Column', inspector:'S. Nguyen', notes:'Heavy pitting on web. Paint system failed. Coating works scheduled Q3.', profile:{designation:'203×203×60 UC', standard:'AS/NZS 3679.1', depth:209, flangeWidth:205, webThick:9.3, flangeThick:14.2, kgPerM:60.0, ixx:6110, zxx:584}, bimX:90, bimY:80, bimW:10, bimH:80, isHorizontal:false },
+  { id:'3', tag:'BRAC-SLO-008', type:'Silo', category:'Bracing', area:'Area 5 – Concentrate Silo', condition:2, priority:1, sensorStatus:'Warning', length:6.2, mass:314, paintArea:9.8, lastInspection:'2026-08-01', description:'CHS 114.3×5.0 Diagonal Brace', inspector:'T. Marshall', notes:'Corrosion at base connection. Thickness 4.1mm vs 5.0mm nominal. Monitor.', profile:{designation:'114.3×5.0 CHS', standard:'AS/NZS 1163', depth:114, flangeWidth:114, webThick:5.0, flangeThick:5.0, kgPerM:13.5, ixx:328, zxx:57.5}, bimX:340, bimY:130, bimW:10, bimH:70, isHorizontal:false },
+  { id:'4', tag:'BEAM-CNV-051', type:'Conveyor', category:'Beam', area:'Area 3 – CV-300 Corridor', condition:3, priority:2, sensorStatus:'Normal', length:10.0, mass:890, paintArea:22.4, lastInspection:'2026-07-14', description:'Universal Beam 406×178×74', inspector:'D. Vickers', notes:'Moderate surface corrosion. Paint delamination 40% of surface. Schedule blasting.', profile:{designation:'406×178×74 UB', standard:'AS/NZS 3679.1', depth:412, flangeWidth:179, webThick:9.5, flangeThick:16.0, kgPerM:74.2, ixx:27300, zxx:1320}, bimX:180, bimY:160, bimW:120, bimH:10, isHorizontal:true },
+  { id:'5', tag:'COL-CNV-011', type:'Conveyor', category:'Column', area:'Area 3 – CV-300 Corridor', condition:3, priority:3, sensorStatus:'Normal', length:9.4, mass:638, paintArea:14.6, lastInspection:'2026-05-20', description:'UC 152×152×37 Column', inspector:'S. Nguyen', notes:'Surface oxidation with minor section loss. Monitoring quarterly.', profile:{designation:'152×152×37 UC', standard:'AS/NZS 3679.1', depth:161, flangeWidth:154, webThick:8.0, flangeThick:11.5, kgPerM:37.0, ixx:2210, zxx:274}, bimX:180, bimY:80, bimW:10, bimH:90, isHorizontal:false },
+  { id:'6', tag:'COL-CNV-012', type:'Conveyor', category:'Column', area:'Area 3 – CV-300 Corridor', condition:4, priority:4, sensorStatus:'Normal', length:9.4, mass:638, paintArea:14.6, lastInspection:'2026-05-20', description:'UC 152×152×37 Column', inspector:'S. Nguyen', notes:'Minor surface rust. Paint system 60% intact. Plan coating next shutdown.', profile:{designation:'152×152×37 UC', standard:'AS/NZS 3679.1', depth:161, flangeWidth:154, webThick:8.0, flangeThick:11.5, kgPerM:37.0, ixx:2210, zxx:274}, bimX:290, bimY:80, bimW:10, bimH:90, isHorizontal:false },
+  { id:'7', tag:'BEAM-PR-031', type:'Pipe Rack', category:'Beam', area:'Area 1 – Process Pipe Rack North', condition:4, priority:4, sensorStatus:'Normal', length:6.0, mass:420, paintArea:10.2, lastInspection:'2026-04-10', description:'Universal Beam 305×127×48', inspector:'T. Marshall', notes:'Light surface corrosion. Acceptable condition.', profile:{designation:'305×127×48 UB', standard:'AS/NZS 3679.1', depth:311, flangeWidth:125, webThick:9.0, flangeThick:14.0, kgPerM:48.1, ixx:9570, zxx:616}, bimX:60, bimY:110, bimW:80, bimH:10, isHorizontal:true },
+  { id:'8', tag:'BEAM-PR-032', type:'Pipe Rack', category:'Beam', area:'Area 1 – Process Pipe Rack North', condition:5, priority:5, sensorStatus:'Normal', length:6.0, mass:420, paintArea:10.2, lastInspection:'2026-04-10', description:'Universal Beam 305×127×48', inspector:'T. Marshall', notes:'Good condition. No defects noted.', profile:{designation:'305×127×48 UB', standard:'AS/NZS 3679.1', depth:311, flangeWidth:125, webThick:9.0, flangeThick:14.0, kgPerM:48.1, ixx:9570, zxx:616}, bimX:60, bimY:160, bimW:80, bimH:10, isHorizontal:true },
+  { id:'9', tag:'BRAC-CNV-003', type:'Conveyor', category:'Bracing', area:'Area 3 – CV-300 Corridor', condition:1, priority:1, sensorStatus:'Alarm', length:5.1, mass:180, paintArea:6.4, lastInspection:'2026-08-12', description:'RHS 100×50×5 Transverse Brace', inspector:'D. Vickers', notes:'Section completely corroded through. Out-of-service risk. Isolate immediately.', profile:{designation:'100×50×5.0 RHS', standard:'AS/NZS 1163', depth:100, flangeWidth:50, webThick:5.0, flangeThick:5.0, kgPerM:10.8, ixx:151, zxx:30.3}, bimX:230, bimY:80, bimW:10, bimH:90, isHorizontal:false },
+  { id:'10', tag:'COL-SLO-002', type:'Silo', category:'Column', area:'Area 5 – Concentrate Silo', condition:5, priority:5, sensorStatus:'Normal', length:12.0, mass:1240, paintArea:24.0, lastInspection:'2026-03-15', description:'UC 254×254×73 Column', inspector:'R. Kamau', notes:'Excellent condition. Full paint coverage.', profile:{designation:'254×254×73 UC', standard:'AS/NZS 3679.1', depth:254, flangeWidth:254, webThick:8.6, flangeThick:14.2, kgPerM:73.1, ixx:11400, zxx:895}, bimX:310, bimY:80, bimW:10, bimH:90, isHorizontal:false },
+  { id:'11', tag:'BEAM-SLO-021', type:'Silo', category:'Beam', area:'Area 5 – Concentrate Silo', condition:3, priority:3, sensorStatus:'Normal', length:8.4, mass:580, paintArea:15.8, lastInspection:'2026-06-28', description:'Universal Beam 356×171×57', inspector:'R. Kamau', notes:'Moderate corrosion at connection points. Budget in next maintenance cycle.', profile:{designation:'356×171×57 UB', standard:'AS/NZS 3679.1', depth:358, flangeWidth:172, webThick:8.0, flangeThick:13.0, kgPerM:57.0, ixx:16000, zxx:894}, bimX:310, bimY:130, bimW:70, bimH:10, isHorizontal:true },
+  { id:'12', tag:'GRAT-AP-007', type:'Access Platform', category:'Grating', area:'Area 2 – North Access Platform', condition:2, priority:2, sensorStatus:'Normal', length:3.0, mass:96, paintArea:8.4, lastInspection:'2026-07-30', description:'Serrated Bar Grating 30×5mm', inspector:'S. Nguyen', notes:'Multiple bars fractured. Slip hazard. Replace grating panels.', profile:{designation:'30×5 SBG', standard:'AS 1085.16', depth:30, flangeWidth:0, webThick:5.0, flangeThick:0, kgPerM:32.0, ixx:0, zxx:0}, bimX:420, bimY:100, bimW:60, bimH:8, isHorizontal:true },
+];
+
+const alarms = [
+  { id:'a1', tag:'BEAM-CNV-042', message:'Displacement sensor DPLC-042 exceeded alarm threshold +18.4mm', priority:1, time:'09:14:32' },
+  { id:'a2', tag:'BRAC-CNV-003', message:'Vibration amplitude above critical limit — 42.1 mm/s RMS', priority:1, time:'08:47:10' },
+  { id:'a3', tag:'COL-PR-017', message:'Displacement drift warning — cumulative 6.2mm over 7 days', priority:2, time:'07:55:04' },
+  { id:'a4', tag:'BRAC-SLO-008', message:'Sensor DPLC-SLO-08 vibration threshold exceeded', priority:2, time:'06:30:18' },
+];
+
+const inspectionHistory = [
+  { date:'2026-07-14', rating:1, inspector:'D. Vickers', notes:'Section loss >30% mid-span. Immediate action.' },
+  { date:'2026-01-08', rating:2, inspector:'T. Marshall', notes:'Progressing corrosion. Remediation scope raised.' },
+  { date:'2025-06-22', rating:3, inspector:'S. Nguyen', notes:'Moderate surface corrosion. Monitor quarterly.' },
+  { date:'2025-01-15', rating:4, inspector:'D. Vickers', notes:'Light rust. Paint system partially intact.' },
+  { date:'2024-07-03', rating:5, inspector:'R. Kamau', notes:'Good condition. Full paint coverage.' },
+];
+
+const workOrders = [
+  { id:'WO-2026-1847', status:'Open', priority:'P1', type:'Structural Repair', date:'2026-08-15', desc:'Emergency section replacement — flange mid-span', cost:28400 },
+  { id:'WO-2026-1204', status:'Complete', priority:'P2', type:'Coating', date:'2026-03-10', desc:'Spot blast & epoxy recoat — mid-span zone', cost:4600 },
+  { id:'WO-2025-0891', status:'Complete', priority:'P3', type:'Inspection', date:'2025-06-22', desc:'Thickness measurement & visual inspection', cost:1200 },
+];
+
+const AREAS = ['All','Area 1 – Process Pipe Rack North','Area 2 – North Access Platform','Area 3 – CV-300 Corridor','Area 5 – Concentrate Silo'];
+const STRUCTURE_TYPES = ['Conveyor','Pipe Rack','Silo','Access Platform','Stockpile Frame'];
+const CATEGORIES = ['Beam','Column','Bracing','Connection','Grating'];
+const PLANT = 'Kalgoorlie Gold Mine – Site A';
+
+const GROUP_LABELS = { condition:'Condition', priority:'Priority', type:'Structure Type', category:'Category', area:'Area', profile:'Profile' };
+const GROUP_KEYS = ['condition','priority','type','category','area','profile'];
+
+function generateTelemetry(points){
+  const data = [];
+  for(let i=0;i<points;i++){
+    const t = i*15;
+    const disp = 12.8 + Math.sin(i*0.3)*3.2 + (Math.random()-0.5)*1.8;
+    const vib = 18.4 + Math.cos(i*0.25)*6.1 + (Math.random()-0.5)*3.2;
+    data.push({ t: String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'), disp:+disp.toFixed(2), vib:+vib.toFixed(2) });
+  }
+  return data;
+}
+const telemetryData = generateTelemetry(60);
+
+/* ============================== HELPERS ============================== */
+/* condColor/priorityColor/sensorColor still return real hex — these feed raw SVG
+   fill/stroke attributes (gauge + BIM viewport), which don't understand Tailwind
+   classes. condClass/priorityClass/sensorClass return the matching sv- Tailwind
+   token name for use in class="" strings on ordinary HTML elements. */
+
+function condColor(c){ return {1:'#DC2626',2:'#EA580C',3:'#D97706',4:'#65A30D',5:'#16A34A'}[c]; }
+function condLabel(c){ return ['','Critical','Poor','Moderate','Good','Acceptable'][c]; }
+function condClass(c){ return 'sv-cond-'+c; }
+function priorityColor(p){ return condColor(p); }
+function priorityLabel(p){ return ['','Urgent','High','Medium','Low','Non-Urgent'][p]; }
+function priorityClass(p){ return 'sv-pri-'+p; }
+function sensorColor(s){ return s==='Alarm'?'#DC2626':s==='Warning'?'#D97706':'#16A34A'; }
+function sensorClass(s){ return s==='Alarm'?'sv-sensor-alarm':s==='Warning'?'sv-sensor-warning':'sv-sensor-normal'; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function getGroupValue(m, key){
+  switch(key){
+    case 'condition': return 'C'+m.condition+' – '+condLabel(m.condition);
+    case 'priority': return 'P'+m.priority+' – '+priorityLabel(m.priority);
+    case 'type': return m.type;
+    case 'category': return m.category;
+    case 'area': return m.area;
+    case 'profile': return m.profile.designation;
+  }
+}
+function getGroupSwatch(m, key){
+  if(key==='condition') return condColor(m.condition);
+  if(key==='priority') return priorityColor(m.priority);
+  return null;
+}
+function groupMembers(list, key){
+  const map = new Map();
+  for(const m of list){
+    const k = getGroupValue(m, key);
+    if(!map.has(k)) map.set(k, []);
+    map.get(k).push(m);
+  }
+  return [...map.entries()];
+}
+function rowTotals(list){
+  const len = list.reduce((s,m)=>s+m.length,0);
+  const mass = list.reduce((s,m)=>s+m.mass,0);
+  const paint = list.reduce((s,m)=>s+m.paintArea,0);
+  return { count:list.length, len, mass, paint, avgKgM: len>0 ? mass/len : 0 };
+}
+function fmtInt(n){ return n.toLocaleString(); }
+
+/* ============================== STATE ============================== */
+
+const state = {
+  selectedId: '1',
+  detailTab: 'condition',
+  colorBy: 'condition',
+  view: 'iso',
+  search: '',
+  filterArea: [], filterType: [], filterCat: [], filterCond: [], filterPri: [], filterSensor: [],
+  isolateCritical: false,
+  showProfileGroups: false,
+  selectedIds: ['1'],
+  summaryScope: 'visible',
+  summaryGroupBy: null,
+  summarySubGroupBy: null,
+  collapsedGroups: new Set(),
+  ackedAlarms: ['a3','a4'],
+  metricUnits: true,
+  openAccordions: new Set(['Area']),
+};
+
+function toggleArr(arr, val){ return arr.includes(val) ? arr.filter(x=>x!==val) : [...arr, val]; }
+
+function getFilteredMembers(){
+  return members.filter(m=>{
+    if(state.search && !m.tag.toLowerCase().includes(state.search.toLowerCase()) && !m.description.toLowerCase().includes(state.search.toLowerCase())) return false;
+    if(state.filterArea.length && !state.filterArea.some(a=>m.area.includes(a))) return false;
+    if(state.filterType.length && !state.filterType.includes(m.type)) return false;
+    if(state.filterCat.length && !state.filterCat.includes(m.category)) return false;
+    if(state.filterCond.length && !state.filterCond.includes(m.condition)) return false;
+    if(state.filterPri.length && !state.filterPri.includes(m.priority)) return false;
+    if(state.filterSensor.length && !state.filterSensor.includes(m.sensorStatus)) return false;
+    if(state.isolateCritical && m.condition > 2) return false;
+    return true;
+  });
+}
+
+/* ============================== ICONS ============================== */
+function icon(name, cls){
+  return '<i data-lucide="'+name+'" class="'+(cls||'w-3.5 h-3.5')+' inline-flex"></i>';
+}
+
+/* ============================== GAUGE (raw SVG — colors stay hex) ============================== */
+
+function polar(cx, cy, r, thetaDeg){
+  const rad = thetaDeg * Math.PI / 180;
+  return { x: cx + r*Math.cos(rad), y: cy - r*Math.sin(rad) };
+}
+function arcPath(cx, cy, r, thetaStart, thetaEnd){
+  const p1 = polar(cx,cy,r,thetaStart);
+  const p2 = polar(cx,cy,r,thetaEnd);
+  return 'M '+p1.x.toFixed(2)+' '+p1.y.toFixed(2)+' A '+r+' '+r+' 0 0 1 '+p2.x.toFixed(2)+' '+p2.y.toFixed(2);
+}
+function gaugeSVG(value, max){
+  max = max || 100;
+  const pct = value/max;
+  const color = pct > 0.7 ? '#16A34A' : pct > 0.4 ? '#D97706' : '#DC2626';
+  const cx=60, cy=70, r=54;
+  const bg = arcPath(cx,cy,r,180,0);
+  const fg = arcPath(cx,cy,r,180,180-pct*180);
+  return '<div class="relative w-[120px] h-[70px] flex-shrink-0">'+
+    '<svg width="120" height="76" viewBox="0 0 120 76" class="absolute -top-1.5 left-0">'+
+      '<path d="'+bg+'" fill="none" stroke="#F1F5F9" stroke-width="12" stroke-linecap="round"/>'+
+      '<path d="'+fg+'" fill="none" stroke="'+color+'" stroke-width="12" stroke-linecap="round"/>'+
+    '</svg>'+
+    '<div class="absolute bottom-1 left-0 right-0 flex flex-col items-center">'+
+      '<span class="font-display text-[26px] font-bold leading-none" style="color:'+color+'">'+value+'<span class="text-sm text-sv-slate">%</span></span>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================== BIM VIEWPORT (raw SVG canvas — colors stay hex) ============================== */
+
+function bimViewportSVG(memberList, selectedId, selectedIds, colorBy){
+  const getColor = m => colorBy==='condition' ? condColor(m.condition) : priorityColor(m.priority);
+  let gridLines = '';
+  [40,80,120,160,200,240].forEach(y=>{ gridLines += '<line x1="20" y1="'+y+'" x2="500" y2="'+y+'" stroke="#E2E8F0" stroke-width="0.5"/>'; });
+  [60,120,180,240,300,360,420,480].forEach(x=>{ gridLines += '<line x1="'+x+'" y1="20" x2="'+x+'" y2="260" stroke="#E2E8F0" stroke-width="0.5"/>'; });
+
+  const areaLabels = [{x:60,label:'AREA 1'},{x:180,label:'AREA 3'},{x:310,label:'AREA 5'},{x:420,label:'AREA 2'}]
+    .map(a=>'<text x="'+(a.x+25)+'" y="18" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#64748B" letter-spacing="1">'+a.label+'</text>').join('');
+
+  let memberSVG = '';
+  memberList.forEach(m=>{
+    const color = getColor(m);
+    const isActive = m.id === selectedId;
+    const isInSet = selectedIds.includes(m.id);
+    const isAlarm = m.sensorStatus === 'Alarm';
+    const dimmed = selectedIds.length > 0 && !isInSet && !isActive;
+    const opacity = dimmed ? 0.28 : 1;
+    let g = '<g data-action="select-bim" data-id="'+m.id+'" class="cursor-pointer" opacity="'+opacity+'">';
+    if(isAlarm){
+      g += '<rect x="'+(m.bimX-3)+'" y="'+(m.bimY-3)+'" width="'+(m.bimW+6)+'" height="'+(m.bimH+6)+'" rx="2" fill="'+color+'" opacity="0.15"/>';
+    }
+    if(isInSet && !isActive){
+      g += '<rect x="'+(m.bimX-2)+'" y="'+(m.bimY-2)+'" width="'+(m.bimW+4)+'" height="'+(m.bimH+4)+'" rx="2" fill="none" stroke="#0284C7" stroke-width="1" stroke-dasharray="3 2" opacity="0.7"/>';
+    }
+    if(isActive){
+      g += '<rect x="'+(m.bimX-2)+'" y="'+(m.bimY-2)+'" width="'+(m.bimW+4)+'" height="'+(m.bimH+4)+'" rx="2" fill="none" stroke="#0284C7" stroke-width="1.5"/>';
+    }
+    g += '<rect x="'+m.bimX+'" y="'+m.bimY+'" width="'+m.bimW+'" height="'+m.bimH+'" rx="1" fill="'+color+'" opacity="0.85"/>';
+    if(m.isHorizontal && m.bimH >= 8){
+      g += '<line x1="'+m.bimX+'" y1="'+(m.bimY+3)+'" x2="'+(m.bimX+m.bimW)+'" y2="'+(m.bimY+3)+'" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
+      g += '<line x1="'+m.bimX+'" y1="'+(m.bimY+m.bimH-3)+'" x2="'+(m.bimX+m.bimW)+'" y2="'+(m.bimY+m.bimH-3)+'" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
+    }
+    if(!m.isHorizontal && m.bimW >= 8){
+      g += '<line x1="'+(m.bimX+3)+'" y1="'+m.bimY+'" x2="'+(m.bimX+3)+'" y2="'+(m.bimY+m.bimH)+'" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
+      g += '<line x1="'+(m.bimX+m.bimW-3)+'" y1="'+m.bimY+'" x2="'+(m.bimX+m.bimW-3)+'" y2="'+(m.bimY+m.bimH)+'" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
+    }
+    if(isActive){
+      g += '<text x="'+(m.bimX+m.bimW/2)+'" y="'+(m.bimY-5)+'" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="#0284C7" letter-spacing="0.5">'+m.tag+'</text>';
+    }
+    g += '</g>';
+    memberSVG += g;
+  });
+
+  let legend = '<g transform="translate(20,235)">';
+  if(colorBy==='condition'){
+    [1,2,3,4,5].forEach((c,i)=>{
+      legend += '<g transform="translate('+(i*84)+',0)"><rect width="10" height="6" rx="1" fill="'+condColor(c)+'"/><text x="13" y="6" font-family="JetBrains Mono" font-size="7" fill="#64748B">'+c+' – '+condLabel(c)+'</text></g>';
+    });
+  } else {
+    [1,2,3,4,5].forEach((p,i)=>{
+      legend += '<g transform="translate('+(i*84)+',0)"><rect width="10" height="6" rx="1" fill="'+priorityColor(p)+'"/><text x="13" y="6" font-family="JetBrains Mono" font-size="7" fill="#64748B">P'+p+' – '+priorityLabel(p)+'</text></g>';
+    });
+  }
+  legend += '</g>';
+
+  return '<svg width="100%" height="100%" viewBox="0 0 520 280" class="bg-transparent">'+
+    gridLines+
+    '<rect x="20" y="220" width="480" height="4" rx="1" fill="#CBD5E1" opacity="0.5"/>'+
+    areaLabels+
+    '<line x1="180" y1="80" x2="300" y2="80" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="4 2"/>'+
+    '<line x1="180" y1="220" x2="300" y2="220" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="4 2"/>'+
+    '<line x1="300" y1="80" x2="300" y2="220" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="4 2"/>'+
+    '<circle cx="360" cy="150" r="32" fill="none" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="3 3"/>'+
+    '<text x="360" y="153" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#64748B">SILO</text>'+
+    memberSVG+
+    legend+
+  '</svg>';
+}
+
+/* ============================== HEADER ============================== */
+
+function buildHeader(){
+  const activeAlarmCount = alarms.filter(a=>!state.ackedAlarms.includes(a.id)).length;
+  return '<header class="bg-sv-surface border-b border-sv-border px-4 h-[52px] flex items-center gap-3 flex-shrink-0 z-10">'+
+    '<div class="flex items-center gap-3 flex-shrink-0">'+
+      '<div class="w-7 h-7 bg-sv-blue rounded-[5px] flex items-center justify-center">'+icon('box','w-3.5 h-3.5 text-blue-50')+'</div>'+
+      '<div class="font-display font-bold text-[17px] text-sv-ink-strong tracking-wide leading-none">STRUCTUREVISION<span class="text-sv-blue"> BIM</span></div>'+
+      '<div class="w-px h-6 bg-sv-border"></div>'+
+      '<button class="flex items-center gap-1.5 bg-sv-panel border border-sv-border rounded-[5px] px-2.5 py-1 cursor-pointer">'+
+        icon('map-pin','w-[11px] h-[11px] text-sv-blue')+'<span class="font-body text-xs text-sv-ink">'+PLANT+'</span>'+icon('chevron-down','w-[11px] h-[11px] text-sv-slate')+
+      '</button>'+
+    '</div>'+
+    '<div class="flex-1 max-w-[340px] relative">'+
+      '<span class="absolute left-2.5 top-1/2 -translate-y-1/2">'+icon('search','w-[13px] h-[13px] text-sv-slate')+'</span>'+
+      '<input data-input="search" value="'+esc(state.search)+'" placeholder="Search Member ID or description…" class="w-full bg-sv-panel border border-sv-border rounded-[5px] py-1.5 pl-7 pr-2.5 font-mono text-[11px] text-sv-ink outline-none"/>'+
+    '</div>'+
+    '<div class="flex-1"></div>'+
+    '<button data-action="toggle-metric" class="flex items-center gap-1 rounded-[5px] px-2.5 py-1 cursor-pointer border '+(state.metricUnits?'bg-sv-blue-dim border-sv-blue':'bg-sv-panel border-sv-border')+'">'+
+      '<span class="font-mono text-[10px] tracking-widest '+(state.metricUnits?'text-sv-blue':'text-sv-slate')+'">'+(state.metricUnits?'SI':'IMP')+'</span>'+
+    '</button>'+
+    '<div class="relative">'+
+      '<button class="rounded-[5px] px-2 py-1.5 cursor-pointer flex items-center gap-1.5 border '+(activeAlarmCount>0?'bg-sv-red-dim border-sv-red':'bg-sv-panel border-sv-border')+'">'+
+        icon('bell','w-[13px] h-[13px] '+(activeAlarmCount>0?'text-sv-red':'text-sv-slate'))+
+        (activeAlarmCount>0 ? '<span class="font-mono text-[10px] text-sv-red font-bold">'+activeAlarmCount+'</span>' : '')+
+      '</button>'+
+      (activeAlarmCount>0 ? '<span class="absolute top-[3px] right-[3px] w-[5px] h-[5px] rounded-full bg-sv-red animate-blink"></span>' : '')+
+    '</div>'+
+    '<div class="flex items-center gap-2 px-2 py-1 bg-sv-panel rounded-[5px] border border-sv-border cursor-pointer">'+
+      '<div class="w-[22px] h-[22px] rounded-full bg-sv-blue flex items-center justify-center">'+icon('user','w-3 h-3 text-blue-50')+'</div>'+
+      '<span class="font-body text-xs text-sv-ink">J. Patterson</span>'+icon('chevron-down','w-[11px] h-[11px] text-sv-slate')+
+    '</div>'+
+  '</header>';
+}
+
+/* ============================== KPIs ============================== */
+
+function buildKPIs(){
+  const criticalCount = members.filter(m=>m.condition===1||m.priority===1).length;
+  const sensorsTotal = members.filter(m=>m.sensorStatus!=='Normal').length;
+  const conditionIndex = Math.round(members.reduce((s,m)=>s+(m.condition/5)*100,0)/members.length);
+  const statusLabel = conditionIndex>=70?'HEALTHY':conditionIndex>=45?'DEGRADED':'CRITICAL';
+
+  const card1 = '<div class="bg-sv-surface border border-sv-border rounded-lg px-4 py-3 flex items-center gap-3.5">'+
+    gaugeSVG(conditionIndex)+
+    '<div><div class="font-mono text-[9px] text-sv-slate tracking-widest uppercase mb-1">Plant Condition Index</div>'+
+    '<div class="font-display text-[22px] font-bold text-sv-green leading-none">'+statusLabel+'</div>'+
+    '<div class="font-mono text-[10px] text-sv-slate mt-0.5">'+members.length+' members assessed</div></div></div>';
+
+  let pbadges = '';
+  [1,2].forEach(p=>{
+    const cnt = members.filter(m=>m.priority===p).length;
+    pbadges += '<div class="rounded px-2 py-0.5 flex gap-1 items-center '+(p===1?'bg-sv-red-dim':'bg-sv-orange-dim')+'">'+
+      '<span class="font-mono text-[9px] font-bold '+(p===1?'text-sv-red':'text-sv-orange')+'">P'+p+'</span>'+
+      '<span class="font-mono text-[9px] text-sv-slate">'+cnt+' members</span></div>';
+  });
+  const card2 = '<div class="bg-sv-surface border rounded-lg px-4 py-3 '+(criticalCount>0?'border-sv-red-dim':'border-sv-border')+'">'+
+    '<div class="font-mono text-[9px] text-sv-slate tracking-widest uppercase mb-2">Critical Members</div>'+
+    '<div class="flex items-baseline gap-2"><div class="font-display text-5xl font-black leading-none text-sv-red">'+criticalCount+'</div>'+
+    '<div><div class="font-mono text-[9px] text-sv-red">P1/COND-1</div><div class="font-mono text-[9px] text-sv-slate">require action</div></div></div>'+
+    '<div class="mt-2 flex gap-1.5">'+pbadges+'</div></div>';
+
+  const scopeArea = members.filter(m=>m.condition<=3).reduce((s,m)=>s+m.paintArea,0);
+  const scopeMass = members.filter(m=>m.condition<=2).reduce((s,m)=>s+m.mass,0)/1000;
+  const scopeCount = members.filter(m=>m.condition<=3).length;
+  const card3 = '<div class="bg-sv-surface border border-sv-border rounded-lg px-4 py-3">'+
+    '<div class="font-mono text-[9px] text-sv-slate tracking-widest uppercase mb-2">Total Repair Scope</div>'+
+    '<div class="grid grid-cols-2 gap-2">'+
+      '<div><div class="font-display text-3xl font-bold text-sv-amber leading-none">'+scopeArea.toFixed(0)+'</div><div class="font-mono text-[9px] text-sv-slate">m² paint surface</div></div>'+
+      '<div><div class="font-display text-3xl font-bold text-sv-orange leading-none">'+scopeMass.toFixed(1)+'</div><div class="font-mono text-[9px] text-sv-slate">t steel replacement</div></div>'+
+    '</div>'+
+    '<div class="mt-2 h-0.5 bg-sv-panel rounded-full"><div class="h-full bg-sv-amber rounded-full" style="width:'+((scopeCount/members.length)*100)+'%"></div></div>'+
+    '<div class="font-mono text-[9px] text-sv-slate mt-[3px]">'+scopeCount+'/'+members.length+' members in scope</div></div>';
+
+  let sensorRows = '';
+  ['Alarm','Warning','Normal'].forEach(s=>{
+    const cnt = members.filter(m=>m.sensorStatus===s).length;
+    sensorRows += '<div class="flex items-center gap-1.5">'+
+      '<div class="w-1.5 h-1.5 rounded-full bg-sv-'+sensorClass(s).replace('sv-','')+' '+(s==='Alarm'?'animate-blink':'')+'"></div>'+
+      '<span class="font-mono text-[9px] text-'+sensorClass(s)+'">'+s+'</span>'+
+      '<span class="font-mono text-[10px] text-sv-ink font-bold">'+cnt+'</span></div>';
+  });
+  const card4 = '<div class="bg-sv-surface border border-sv-border rounded-lg px-4 py-3">'+
+    '<div class="font-mono text-[9px] text-sv-slate tracking-widest uppercase mb-2">Movement Sensors</div>'+
+    '<div class="flex items-center gap-3"><div><div class="font-display text-[42px] font-black leading-none text-sv-blue">'+members.length+'</div><div class="font-mono text-[9px] text-sv-slate">total active</div></div>'+
+    '<div class="flex flex-col gap-1.5 justify-center">'+sensorRows+'</div></div>'+
+    (sensorsTotal>0 ? '<div class="mt-2 bg-sv-red-dim rounded px-2 py-0.5 inline-flex items-center gap-1.5">'+icon('alert-triangle','w-[9px] h-[9px] text-sv-red')+'<span class="font-mono text-[9px] text-sv-red">'+sensorsTotal+' sensor alerts active</span></div>' : '')+
+  '</div>';
+
+  return '<div class="px-3.5 py-2.5 grid grid-cols-4 gap-2.5 flex-shrink-0">'+card1+card2+card3+card4+'</div>';
+}
+
+/* ============================== SIDEBAR ============================== */
+
+function accordion(title, contentHtml){
+  const open = state.openAccordions.has(title);
+  return '<div class="border-b border-sv-border">'+
+    '<button data-action="toggle-accordion" data-title="'+esc(title)+'" class="w-full flex items-center justify-between px-3 py-2 text-left bg-transparent border-none cursor-pointer">'+
+      '<span class="font-mono text-[10px] tracking-widest text-sv-slate uppercase">'+title+'</span>'+
+      (open ? icon('chevron-down','w-3 h-3 text-sv-slate') : icon('chevron-right','w-3 h-3 text-sv-slate'))+
+    '</button>'+
+    (open ? '<div class="px-3 pb-3">'+contentHtml+'</div>' : '')+
+  '</div>';
+}
+function checkItem(group, label, value, colorClass, checked){
+  const box = colorClass
+    ? (checked ? 'border-'+colorClass+' bg-'+colorClass : 'border-sv-border bg-transparent')
+    : (checked ? 'border-sv-blue bg-sv-blue' : 'border-sv-border bg-transparent');
+  return '<label data-action="toggle-filter" data-group="'+group+'" data-value="'+esc(value)+'" class="flex items-center gap-2 py-0.5 cursor-pointer">'+
+    '<div class="w-3 h-3 rounded-sm border-[1.5px] flex-shrink-0 '+box+'"></div>'+
+    '<span class="font-mono text-[10px] text-sv-slate">'+esc(label)+'</span>'+
+    (colorClass ? '<span class="w-1.5 h-1.5 rounded-sm bg-'+colorClass+' flex-shrink-0"></span>' : '')+
+  '</label>';
+}
+
+function buildSidebar(filteredMembers){
+  let areaItems = '';
+  AREAS.slice(1).forEach(a=>{
+    const short = a.split('–')[0].trim();
+    areaItems += checkItem('Area', short, short, null, state.filterArea.includes(short));
+  });
+  let typeItems = STRUCTURE_TYPES.map(t=>checkItem('Type', t, t, null, state.filterType.includes(t))).join('');
+  let catItems = CATEGORIES.map(c=>checkItem('Cat', c, c, null, state.filterCat.includes(c))).join('');
+  let condItems = [1,2,3,4,5].map(c=>checkItem('Cond', c+' – '+condLabel(c), c, condClass(c), state.filterCond.includes(c))).join('');
+  let priItems = [1,2,3,4,5].map(p=>checkItem('Pri', 'P'+p+' – '+priorityLabel(p), p, priorityClass(p), state.filterPri.includes(p))).join('');
+  let sensorItems = ['Normal','Warning','Alarm'].map(s=>checkItem('Sensor', s, s, sensorClass(s), state.filterSensor.includes(s))).join('');
+
+  let memberList = '';
+  filteredMembers.forEach(m=>{
+    const active = state.selectedId === m.id;
+    memberList += '<div data-action="select-member" data-id="'+m.id+'" class="px-3 py-1.5 cursor-pointer border-l-[3px] '+(active?'bg-sv-panel':'bg-transparent')+'" style="border-left-color:'+(active?condColor(m.condition):'transparent')+'">'+
+      '<div class="flex justify-between items-center">'+
+        '<span class="font-mono text-[10px] text-sv-ink font-medium">'+m.tag+'</span>'+
+        (m.sensorStatus!=='Normal' ? '<div class="w-[5px] h-[5px] rounded-full bg-'+sensorClass(m.sensorStatus)+' '+(m.sensorStatus==='Alarm'?'animate-blink':'')+'"></div>' : '')+
+      '</div>'+
+      '<div class="flex gap-1.5 mt-0.5 items-center">'+
+        '<div class="px-1.5 py-px rounded-sm border" style="background:'+condColor(m.condition)+'22;border-color:'+condColor(m.condition)+'44">'+
+          '<span class="font-mono text-[8px]" style="color:'+condColor(m.condition)+'">C'+m.condition+'</span></div>'+
+        '<span class="font-body text-[9px] text-sv-slate truncate">'+m.type+'</span>'+
+      '</div></div>';
+  });
+
+  return '<aside class="bg-sv-surface border border-sv-border rounded-lg flex flex-col overflow-hidden">'+
+    '<div class="px-3 py-2.5 border-b border-sv-border flex items-center gap-1.5">'+
+      icon('filter','w-[11px] h-[11px] text-sv-blue')+
+      '<span class="font-display text-sm font-bold text-sv-ink-strong tracking-wide">FILTERS</span>'+
+      '<div class="flex-1"></div>'+
+      '<button data-action="clear-filters" class="font-mono text-[9px] text-sv-blue bg-transparent border-none cursor-pointer">CLEAR</button>'+
+    '</div>'+
+    '<div class="flex-1 overflow-y-auto">'+
+      accordion('Area', areaItems)+
+      accordion('Structure Type', typeItems)+
+      accordion('Structural Category', catItems)+
+      accordion('Condition Rating', condItems)+
+      accordion('Priority Level', priItems)+
+      accordion('Sensor Status', sensorItems)+
+      '<div class="px-2.5 pt-2 pb-1 border-t border-sv-border"><span class="font-mono text-[9px] text-sv-slate tracking-widest uppercase">'+filteredMembers.length+' Members</span></div>'+
+      memberList+
+    '</div>'+
+  '</aside>';
+}
+
+/* ============================== CENTER (BIM + SUMMARY) ============================== */
+
+function buildCenter(filteredMembers){
+  const activeAlarms = alarms.filter(a=>!state.ackedAlarms.includes(a.id));
+
+  const toolbar = '<div class="px-3 py-2 border-b border-sv-border flex items-center gap-2 flex-shrink-0 flex-wrap">'+
+    '<span class="font-display text-sm font-bold text-sv-slate tracking-wide">3D BIM VIEWPORT</span>'+
+    '<div class="flex-1"></div>'+
+    '<div class="flex bg-sv-panel-raised rounded-[5px] border border-sv-border p-0.5 gap-0.5">'+
+      ['condition','priority'].map(v=>'<button data-action="set-colorby" data-value="'+v+'" class="px-2.5 py-1 rounded border-none cursor-pointer font-mono text-[9px] uppercase tracking-wide '+(state.colorBy===v?'bg-sv-panel text-sv-blue':'bg-transparent text-sv-slate')+'">'+(v==='condition'?'Color: Condition':'Color: Priority')+'</button>').join('')+
+    '</div>'+
+    '<div class="flex bg-sv-panel-raised rounded-[5px] border border-sv-border p-0.5 gap-0.5">'+
+      ['iso','top','front'].map(v=>'<button data-action="set-view" data-value="'+v+'" class="px-2.5 py-1 rounded border-none cursor-pointer font-mono text-[9px] uppercase tracking-wide '+(state.view===v?'bg-sv-panel text-sv-blue':'bg-transparent text-sv-slate')+'">'+v+'</button>').join('')+
+    '</div>'+
+    '<button data-action="toggle-isolate" class="px-2.5 py-1 rounded-[5px] cursor-pointer border flex items-center gap-1 font-mono text-[9px] '+(state.isolateCritical?'border-sv-red bg-sv-red-dim text-sv-red':'border-sv-border bg-sv-panel-raised text-sv-slate')+'">'+icon('eye','w-2.5 h-2.5')+(state.isolateCritical?'SHOW ALL':'ISOLATE CRITICAL')+'</button>'+
+    '<button data-action="toggle-groups" class="px-2.5 py-1 rounded-[5px] cursor-pointer border flex items-center gap-1 font-mono text-[9px] '+(state.showProfileGroups?'border-sv-blue bg-sv-blue-dim text-sv-blue':'border-sv-border bg-sv-panel-raised text-sv-slate')+'">'+icon('layers','w-2.5 h-2.5')+'GROUP BY PROFILE</button>'+
+    '<button class="px-1.5 py-1 bg-sv-surface border border-sv-border rounded-[5px] cursor-pointer">'+icon('rotate-ccw','w-3 h-3 text-sv-slate')+'</button>'+
+    '<button class="px-1.5 py-1 bg-sv-surface border border-sv-border rounded-[5px] cursor-pointer">'+icon('maximize-2','w-3 h-3 text-sv-slate')+'</button>'+
+  '</div>';
+
+  const alarmTicker = activeAlarms.length > 0 ? '<div class="absolute top-0 left-0 right-0 bg-sv-red-dim border-b border-red-500 px-3 py-[3px] flex items-center gap-2 overflow-hidden">'+
+    icon('alert-triangle','w-2.5 h-2.5 text-sv-red')+
+    '<div class="flex-1 overflow-hidden whitespace-nowrap"><span class="font-mono text-[9px] text-sv-red">'+
+      activeAlarms.map(a=>'⬤&nbsp;&nbsp;'+a.tag+'&nbsp;&nbsp;'+esc(a.message)).join('&nbsp;&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;&nbsp;')+
+    '</span></div></div>' : '';
+
+  const canvas = '<div class="flex-1 relative overflow-hidden">'+
+    '<div class="absolute inset-0 opacity-40" style="background-image:linear-gradient(#E2E8F0 1px, transparent 1px), linear-gradient(90deg, #E2E8F0 1px, transparent 1px);background-size:40px 40px;"></div>'+
+    '<div class="absolute inset-0 overflow-hidden pointer-events-none"><div class="w-full h-px animate-ticker" style="background:linear-gradient(90deg, transparent, #0284C720, transparent)"></div></div>'+
+    '<div class="absolute inset-0 flex items-center justify-center p-5">'+bimViewportSVG(filteredMembers, state.selectedId, state.selectedIds, state.colorBy)+'</div>'+
+    '<div class="absolute bottom-3.5 right-3.5"><div class="bg-sv-surface border border-sv-border rounded px-2 py-[3px]"><span class="font-mono text-[9px] text-sv-blue tracking-widest">'+state.view.toUpperCase()+' VIEW · '+(state.view==='iso'?'30°':state.view==='top'?'90°':'0°')+'</span></div></div>'+
+    alarmTicker+
+  '</div>';
+
+  return '<div class="bg-sv-surface border border-sv-border rounded-lg flex flex-col overflow-hidden relative">'+
+    toolbar+canvas+buildSummaryTable(filteredMembers)+
+    (state.showProfileGroups ? buildProfileModal(filteredMembers) : '')+
+  '</div>';
+}
+
+function th(label, right){
+  return '<th class="px-2.5 py-[5px] font-mono text-[8px] font-semibold text-sv-slate-dim '+(right?'text-right':'text-left')+' tracking-wide border-b border-sv-border whitespace-nowrap bg-sv-panel">'+label+'</th>';
+}
+function totCells(t, mono){
+  const ff = mono ? 'font-mono' : 'font-display';
+  const fs1 = mono ? 'text-[10px]' : 'text-[13px]';
+  return '<td class="px-2.5 py-1 '+ff+' '+fs1+' font-bold text-sv-ink-strong text-right">'+t.count+'</td>'+
+    '<td class="px-2.5 py-1 '+ff+' '+fs1+' font-bold text-slate-700 text-right">'+t.len.toFixed(1)+'</td>'+
+    '<td class="px-2.5 py-1 '+ff+' '+fs1+' font-bold text-slate-700 text-right">'+fmtInt(t.mass)+'</td>'+
+    '<td class="px-2.5 py-1 '+ff+' '+fs1+' font-bold text-slate-700 text-right">'+t.paint.toFixed(1)+'</td>'+
+    '<td class="px-2.5 py-1 font-mono text-[10px] text-sv-slate-dim text-right">'+t.avgKgM.toFixed(1)+'</td>';
+}
+function memberRow(m, indentClass){
+  const active = state.selectedId===m.id;
+  return '<tr data-action="select-group-member" data-id="'+m.id+'" class="border-b border-sv-panel cursor-pointer '+(active?'bg-sv-blue-dim':'bg-sv-surface')+'">'+
+    '<td class="py-[3px] pr-2.5 '+indentClass+'"><div class="flex items-center gap-1.5">'+
+      '<div class="w-[5px] h-[5px] rounded-full flex-shrink-0" style="background:'+condColor(m.condition)+'"></div>'+
+      '<span class="font-mono text-[9px] text-sv-slate">'+m.tag+'</span></div></td>'+
+    '<td class="px-2.5 py-[3px] font-mono text-[9px] text-sv-slate-dim text-right">1</td>'+
+    '<td class="px-2.5 py-[3px] font-mono text-[9px] text-sv-slate-dim text-right">'+m.length.toFixed(1)+'</td>'+
+    '<td class="px-2.5 py-[3px] font-mono text-[9px] text-sv-slate-dim text-right">'+fmtInt(m.mass)+'</td>'+
+    '<td class="px-2.5 py-[3px] font-mono text-[9px] text-sv-slate-dim text-right">'+m.paintArea.toFixed(1)+'</td>'+
+    '<td class="px-2.5 py-[3px] font-mono text-[9px] text-sv-slate-dim text-right">'+(m.length>0?(m.mass/m.length).toFixed(1):'—')+'</td>'+
+  '</tr>';
+}
+
+function buildSummaryTable(filteredMembers){
+  const summaryData = state.summaryScope==='visible' ? filteredMembers : filteredMembers.filter(m=>state.selectedIds.includes(m.id));
+  const grand = rowTotals(summaryData);
+
+  const groupBySelect = '<select data-select="groupby" class="font-mono text-[9px] text-slate-700 bg-sv-panel border border-sv-border rounded px-1.5 py-0.5 cursor-pointer outline-none">'+
+    '<option value="">None</option>'+GROUP_KEYS.map(k=>'<option value="'+k+'" '+(state.summaryGroupBy===k?'selected':'')+'>'+GROUP_LABELS[k]+'</option>').join('')+'</select>';
+  const subGroupSelect = state.summaryGroupBy ? ('<span class="font-mono text-[8px] text-sv-slate-dim tracking-widest flex-shrink-0">THEN BY</span>'+
+    '<select data-select="subgroupby" class="font-mono text-[9px] text-slate-700 bg-sv-panel border border-sv-border rounded px-1.5 py-0.5 cursor-pointer outline-none">'+
+    '<option value="">None</option>'+GROUP_KEYS.filter(k=>k!==state.summaryGroupBy).map(k=>'<option value="'+k+'" '+(state.summarySubGroupBy===k?'selected':'')+'>'+GROUP_LABELS[k]+'</option>').join('')+'</select>') : '';
+
+  const controls = '<div class="px-2.5 py-1.5 flex items-center gap-2 border-b border-sv-border flex-wrap">'+
+    '<div class="flex bg-sv-panel-raised border border-sv-border rounded-[5px] p-0.5 gap-0.5 flex-shrink-0">'+
+      ['visible','selected'].map(s=>'<button data-action="set-summary-scope" data-value="'+s+'" class="px-2 py-[3px] rounded border-none cursor-pointer font-mono text-[9px] '+(state.summaryScope===s?'bg-sv-surface text-sv-blue':'bg-transparent text-sv-slate-dim')+'">'+(s==='visible'?('ALL VISIBLE ('+filteredMembers.length+')'):('SELECTED ('+state.selectedIds.length+')'))+'</button>').join('')+
+    '</div>'+
+    (state.summaryScope==='selected' && state.selectedIds.length>0 ? '<button data-action="clear-selected" class="font-mono text-[8px] text-sv-red bg-transparent border-none cursor-pointer p-0">CLEAR</button>' : '')+
+    '<div class="w-px h-3.5 bg-sv-border flex-shrink-0"></div>'+
+    '<span class="font-mono text-[8px] text-sv-slate-dim tracking-widest flex-shrink-0">GROUP BY</span>'+
+    groupBySelect+subGroupSelect+
+    '<div class="flex-1"></div>'+
+    '<span class="font-mono text-[9px] text-sv-slate-dim">Last sync: 09:22:41</span>'+
+    '<div class="w-1.5 h-1.5 rounded-full bg-sv-green animate-blink-slow flex-shrink-0"></div>'+
+  '</div>';
+
+  let bodyHtml;
+  if(summaryData.length===0){
+    bodyHtml = '<div class="p-3 text-center font-mono text-[10px] text-sv-slate-dim">'+(state.summaryScope==='selected'?'No members selected — click elements in the 3D view':'No members match current filters')+'</div>';
+  } else {
+    let rows = '';
+    if(!state.summaryGroupBy){
+      [1,2,3,4,5].forEach(c=>{
+        const grp = summaryData.filter(m=>m.condition===c);
+        if(!grp.length) return;
+        const t = rowTotals(grp);
+        rows += '<tr class="border-b border-sv-panel"><td class="px-2.5 py-1"><div class="flex items-center gap-1.5">'+
+          '<div class="w-[7px] h-[7px] rounded-sm flex-shrink-0" style="background:'+condColor(c)+'"></div>'+
+          '<span class="font-mono text-[9px] font-semibold" style="color:'+condColor(c)+'">C'+c+' – '+condLabel(c)+'</span></div></td>'+totCells(t,true)+'</tr>';
+      });
+    } else {
+      groupMembers(summaryData, state.summaryGroupBy).forEach(([groupVal, groupList])=>{
+        const gKey = 'g:'+groupVal;
+        const isCollapsed = state.collapsedGroups.has(gKey);
+        const gt = rowTotals(groupList);
+        const swatch = getGroupSwatch(groupList[0], state.summaryGroupBy);
+        rows += '<tr data-action="toggle-collapse" data-key="'+esc(gKey)+'" class="bg-sv-panel border-b border-sv-border cursor-pointer"><td class="px-2.5 py-[5px]"><div class="flex items-center gap-1.5">'+
+          '<span class="text-sv-slate-dim leading-none">'+(isCollapsed?'▶':'▼')+'</span>'+
+          (swatch?'<div class="w-[7px] h-[7px] rounded-sm flex-shrink-0" style="background:'+swatch+'"></div>':'')+
+          '<span class="font-mono text-[9px] font-bold text-sv-ink-strong">'+esc(groupVal)+'</span></div></td>'+totCells(gt,false)+'</tr>';
+        if(!isCollapsed){
+          if(state.summarySubGroupBy){
+            groupMembers(groupList, state.summarySubGroupBy).forEach(([subVal, subList])=>{
+              const sgKey = 'sg:'+groupVal+':'+subVal;
+              const sgCollapsed = state.collapsedGroups.has(sgKey);
+              const st = rowTotals(subList);
+              const subSwatch = getGroupSwatch(subList[0], state.summarySubGroupBy);
+              rows += '<tr data-action="toggle-collapse" data-key="'+esc(sgKey)+'" class="border-b border-sv-panel cursor-pointer bg-slate-50/60"><td class="py-1 pl-[26px] pr-2.5"><div class="flex items-center gap-1.5">'+
+                '<span class="text-sv-border-bright text-[9px]">'+(sgCollapsed?'▶':'▼')+'</span>'+
+                (subSwatch?'<div class="w-1.5 h-1.5 rounded-sm flex-shrink-0" style="background:'+subSwatch+'"></div>':'')+
+                '<span class="font-mono text-[9px] text-slate-700">'+esc(subVal)+'</span></div></td>'+totCells(st,true)+'</tr>';
+              if(!sgCollapsed){ subList.forEach(m=>{ rows += memberRow(m,'pl-11'); }); }
+            });
+          } else {
+            groupList.forEach(m=>{ rows += memberRow(m,'pl-[26px]'); });
+          }
+        }
+      });
+    }
+    rows += '<tr class="bg-sv-panel-raised border-t-2 border-sv-border"><td class="px-2.5 py-1.5"><span class="font-mono text-[9px] font-bold text-slate-700 tracking-wide">TOTAL</span></td>'+
+      '<td class="px-2.5 py-1.5 font-display text-sm font-black text-sv-ink-strong text-right">'+grand.count+'</td>'+
+      '<td class="px-2.5 py-1.5 font-display text-sm font-bold text-sv-ink-strong text-right">'+grand.len.toFixed(1)+'</td>'+
+      '<td class="px-2.5 py-1.5 font-display text-sm font-bold text-sv-ink-strong text-right">'+fmtInt(grand.mass)+'</td>'+
+      '<td class="px-2.5 py-1.5 font-display text-sm font-bold text-sv-ink-strong text-right">'+grand.paint.toFixed(1)+'</td>'+
+      '<td class="px-2.5 py-1.5 font-mono text-[9px] text-sv-slate-dim text-right">—</td></tr>';
+
+    bodyHtml = '<div class="overflow-x-auto max-h-[220px] overflow-y-auto"><table class="w-full min-w-[520px]"><thead class="sticky top-0 z-[1]"><tr>'+
+      th(state.summaryGroupBy?GROUP_LABELS[state.summaryGroupBy]:'Condition')+th('Members',true)+th('Length (m)',true)+th('Mass (kg)',true)+th('Paint (m²)',true)+th('Avg kg/m',true)+
+      '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+
+  return '<div class="border-t border-sv-border flex-shrink-0">'+controls+bodyHtml+'</div>';
+}
+
+function buildProfileModal(filteredMembers){
+  const grouped = {};
+  filteredMembers.forEach(m=>{ const key=m.profile.designation; (grouped[key]=grouped[key]||[]).push(m); });
+  const headers = ['Profile Designation','Standard','Qty','Depth (mm)','Flange W (mm)','Web t (mm)','Flange t (mm)','kg/m','Ixx (cm⁴)','Zxx (cm³)','Total Length (m)','Total Mass (kg)','Paint Area (m²)'];
+  let headHtml = headers.map((h,i)=>'<th class="px-2.5 py-[7px] font-mono text-[8px] font-semibold text-sv-slate-dim '+(i<2?'text-left':'text-right')+' tracking-wide border-b-2 border-sv-border whitespace-nowrap">'+h+'</th>').join('');
+
+  let rows = '';
+  Object.entries(grouped).forEach(([desig, grpMembers], gi)=>{
+    const p = grpMembers[0].profile;
+    const totLen = grpMembers.reduce((s,m)=>s+m.length,0);
+    const totMass = grpMembers.reduce((s,m)=>s+m.mass,0);
+    const totPaint = grpMembers.reduce((s,m)=>s+m.paintArea,0);
+    const worstCond = Math.min(...grpMembers.map(m=>m.condition));
+    rows += '<tr class="'+(gi%2===0?'bg-sv-surface':'bg-sv-panel')+' border-b border-sv-panel">'+
+      '<td class="py-[7px] px-2.5"><div class="flex items-center gap-1.5">'+
+        '<div class="w-1.5 h-1.5 rounded-sm flex-shrink-0" style="background:'+condColor(worstCond)+'"></div>'+
+        '<span class="font-mono text-[10px] font-semibold text-sv-ink-strong">'+desig+'</span></div>'+
+        '<div class="mt-0.5 pl-3">'+grpMembers.map(m=>'<span class="font-mono text-[8px] text-sv-slate-dim mr-1.5">'+m.tag+'</span>').join('')+'</div></td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[9px] text-sv-slate">'+p.standard+'</td>'+
+      '<td class="py-[7px] px-2.5 font-display text-base font-bold text-sv-ink-strong text-right">'+grpMembers.length+'</td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[10px] text-slate-700 text-right">'+p.depth+'</td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[10px] text-slate-700 text-right">'+(p.flangeWidth||'—')+'</td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[10px] text-slate-700 text-right">'+p.webThick+'</td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[10px] text-slate-700 text-right">'+(p.flangeThick||'—')+'</td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[10px] text-slate-700 text-right">'+p.kgPerM+'</td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[10px] text-slate-700 text-right">'+(p.ixx||'—')+'</td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[10px] text-slate-700 text-right">'+(p.zxx||'—')+'</td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[10px] font-semibold text-sv-blue text-right">'+totLen.toFixed(1)+'</td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[10px] font-semibold text-sv-blue text-right">'+fmtInt(totMass)+'</td>'+
+      '<td class="py-[7px] px-2.5 font-mono text-[10px] font-semibold text-sv-blue text-right">'+totPaint.toFixed(1)+'</td>'+
+    '</tr>';
+  });
+  rows += '<tr class="bg-sv-blue-dim border-t-2 border-sky-200"><td colspan="2" class="py-[7px] px-2.5"><span class="font-mono text-[9px] font-bold text-sv-blue tracking-widest">GRAND TOTAL</span></td>'+
+    '<td class="py-[7px] px-2.5 font-display text-base font-black text-sv-blue text-right">'+filteredMembers.length+'</td>'+
+    '<td colspan="7"></td>'+
+    '<td class="py-[7px] px-2.5 font-display text-sm font-bold text-sv-blue text-right">'+filteredMembers.reduce((s,m)=>s+m.length,0).toFixed(1)+'</td>'+
+    '<td class="py-[7px] px-2.5 font-display text-sm font-bold text-sv-blue text-right">'+fmtInt(filteredMembers.reduce((s,m)=>s+m.mass,0))+'</td>'+
+    '<td class="py-[7px] px-2.5 font-display text-sm font-bold text-sv-blue text-right">'+filteredMembers.reduce((s,m)=>s+m.paintArea,0).toFixed(1)+'</td></tr>';
+
+  return '<div data-action="close-groups" class="absolute inset-0 bg-slate-900/40 z-20 flex flex-col">'+
+    '<div data-action="stop" class="m-auto w-[92%] max-h-[88%] bg-sv-surface border border-sv-border rounded-[10px] flex flex-col overflow-hidden shadow-2xl">'+
+      '<div class="px-4 py-3 border-b border-sv-border flex items-center gap-2 flex-shrink-0">'+
+        icon('layers','w-3.5 h-3.5 text-sv-blue')+
+        '<span class="font-display text-base font-bold text-sv-ink-strong tracking-wide">STRUCTURAL PROFILE QUANTITY SCHEDULE</span>'+
+        '<div class="font-mono text-[9px] text-sv-slate-dim px-1.5 py-0.5 bg-sv-panel-raised rounded border border-sv-border">'+filteredMembers.length+' members · '+Object.keys(grouped).length+' profiles</div>'+
+        '<div class="flex-1"></div>'+
+        '<button data-action="close-groups" class="bg-transparent border-none cursor-pointer p-1">'+icon('x','w-4 h-4 text-sv-slate-dim')+'</button>'+
+      '</div>'+
+      '<div class="flex-1 overflow-y-auto"><table class="w-full"><thead class="sticky top-0 bg-sv-panel"><tr>'+headHtml+'</tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '</div></div>';
+}
+
+/* ============================== RIGHT PANEL ============================== */
+
+function buildRightPanel(){
+  const selected = members.find(m=>m.id===state.selectedId) || null;
+  if(!selected){
+    return '<div class="bg-sv-surface border border-sv-border rounded-lg flex flex-col items-center justify-center gap-2.5">'+
+      icon('box','w-8 h-8 text-slate-700')+'<span class="font-mono text-[11px] text-sv-slate">Select a member to inspect</span></div>';
+  }
+
+  const header = '<div class="px-3.5 py-3 border-b border-sv-border flex-shrink-0">'+
+    '<div class="flex items-start justify-between gap-2">'+
+      '<div><div class="flex items-center gap-1.5 mb-1">'+
+        '<span class="font-mono text-[13px] font-medium text-sv-ink-strong">'+selected.tag+'</span>'+
+        (selected.sensorStatus!=='Normal' ? '<div class="w-[7px] h-[7px] rounded-full flex-shrink-0 animate-blink" style="background:'+sensorColor(selected.sensorStatus)+'"></div>' : '')+
+      '</div><div class="font-body text-[11px] text-sv-slate">'+selected.description+'</div>'+
+      '<div class="font-body text-[10px] text-sv-slate mt-[3px]">'+selected.area+'</div></div>'+
+      '<button class="bg-sv-surface border border-sv-border rounded px-1.5 py-1 cursor-pointer">'+icon('more-vertical','w-3 h-3 text-sv-slate')+'</button>'+
+    '</div>'+
+    '<div class="flex gap-1.5 mt-2.5 flex-wrap">'+
+      '<div class="px-2.5 py-[3px] rounded border" style="background:'+condColor(selected.condition)+'22;border-color:'+condColor(selected.condition)+'55"><span class="font-mono text-[10px] font-bold" style="color:'+condColor(selected.condition)+'">C'+selected.condition+' – '+condLabel(selected.condition).toUpperCase()+'</span></div>'+
+      '<div class="px-2.5 py-[3px] rounded border" style="background:'+priorityColor(selected.priority)+'22;border-color:'+priorityColor(selected.priority)+'55"><span class="font-mono text-[10px] font-bold" style="color:'+priorityColor(selected.priority)+'">P'+selected.priority+' – '+priorityLabel(selected.priority).toUpperCase()+'</span></div>'+
+      '<div class="px-2.5 py-[3px] rounded border" style="background:'+sensorColor(selected.sensorStatus)+'22;border-color:'+sensorColor(selected.sensorStatus)+'55"><div class="flex items-center gap-1.5">'+icon('radio','w-2 h-2')+'<span class="font-mono text-[10px]" style="color:'+sensorColor(selected.sensorStatus)+'">SENSOR '+selected.sensorStatus.toUpperCase()+'</span></div></div>'+
+    '</div>'+
+    '<div class="grid grid-cols-2 gap-2 mt-2.5">'+
+      [{label:'PROFILE',value:selected.profile.designation},{label:'MASS',value:fmtInt(selected.mass)+' kg'},{label:'PAINT AREA',value:selected.paintArea+' m²'},{label:'LENGTH',value:selected.length+' m'}]
+        .map(p=>'<div class="bg-sv-panel border border-sv-border rounded px-2.5 py-1.5"><div class="font-mono text-[8px] text-sv-slate-dim tracking-widest mb-[3px]">'+p.label+'</div><div class="font-display text-base font-bold text-sv-ink-strong leading-tight">'+p.value+'</div></div>').join('')+
+    '</div></div>';
+
+  const tabs = [{id:'condition',label:'Condition',ic:'activity'},{id:'telemetry',label:'Telemetry',ic:'radio'},{id:'workorders',label:'Work Orders',ic:'file-text'}];
+  const tabBar = '<div class="flex border-b border-sv-border flex-shrink-0">'+
+    tabs.map(t=>'<button data-action="set-tab" data-tab="'+t.id+'" class="flex-1 py-2.5 px-1 bg-transparent border-none cursor-pointer border-b-2 '+(state.detailTab===t.id?'border-sv-blue':'border-transparent')+' flex items-center justify-center gap-1.5">'+
+      '<span class="'+(state.detailTab===t.id?'text-sv-blue':'text-sv-slate')+'">'+icon(t.ic,'w-[11px] h-[11px]')+'</span>'+
+      '<span class="font-mono text-[10px] tracking-wide '+(state.detailTab===t.id?'text-sv-blue':'text-sv-slate')+'">'+t.label+'</span></button>').join('')+
+  '</div>';
+
+  let tabContent = '';
+  if(state.detailTab==='condition') tabContent = buildConditionTab(selected);
+  else if(state.detailTab==='telemetry') tabContent = buildTelemetryTab(selected);
+  else tabContent = buildWorkOrdersTab(selected);
+
+  return '<div class="bg-sv-surface border border-sv-border rounded-lg flex flex-col overflow-hidden">'+
+    header+tabBar+'<div class="flex-1 overflow-y-auto p-3.5">'+tabContent+'</div></div>';
+}
+
+function buildConditionTab(selected){
+  let timeline = '<div class="relative"><div class="absolute left-3.5 top-0 bottom-0 w-px bg-sv-border"></div>';
+  inspectionHistory.forEach(h=>{
+    timeline += '<div class="flex gap-3 mb-3.5 relative">'+
+      '<div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 z-[1] border-2 border-sv-surface" style="background:'+condColor(h.rating)+'"><span class="font-display text-xs font-bold text-slate-100">'+h.rating+'</span></div>'+
+      '<div class="flex-1 pt-0.5"><div class="flex justify-between items-center mb-0.5">'+
+        '<span class="font-display text-[13px] font-bold tracking-wide" style="color:'+condColor(h.rating)+'">'+condLabel(h.rating).toUpperCase()+'</span>'+
+        '<span class="font-mono text-[9px] text-sv-slate">'+h.date+'</span></div>'+
+        '<div class="font-body text-[11px] text-sv-slate leading-relaxed">'+esc(h.notes)+'</div>'+
+        '<div class="font-mono text-[9px] text-sv-slate mt-0.5">↳ '+h.inspector+'</div></div></div>';
+  });
+  timeline += '</div>';
+
+  const photos = ['Flange corrosion','Web section loss','Connection detail'].map(cap=>
+    '<div class="rounded overflow-hidden border border-sv-border">'+
+      '<div class="h-[60px] bg-gradient-to-br from-sv-panel to-sv-border flex flex-col items-center justify-center gap-1">'+
+        '<div class="w-6 h-6 rounded border flex items-center justify-center" style="background:'+condColor(selected.condition)+'22;border-color:'+condColor(selected.condition)+'44">'+icon('info','w-2.5 h-2.5',)+'</div></div>'+
+      '<div class="px-1.5 py-[3px] bg-sv-panel"><span class="font-body text-[9px] text-sv-slate">'+cap+'</span></div></div>').join('');
+
+  return '<div>'+
+    '<div class="font-mono text-[9px] text-sv-slate tracking-widest mb-2.5 uppercase">Inspection History</div>'+
+    '<div class="bg-sv-panel rounded-md px-3 py-2.5 mb-3 border-l-[3px]" style="border-left-color:'+condColor(selected.condition)+'">'+
+      '<div class="font-mono text-[9px] text-sv-slate mb-1">Latest note — '+selected.inspector+' · '+selected.lastInspection+'</div>'+
+      '<div class="font-body text-xs text-sv-ink leading-relaxed">'+esc(selected.notes)+'</div></div>'+
+    timeline+
+    '<div class="font-mono text-[9px] text-sv-slate tracking-widest mb-2 uppercase">Site Photos</div>'+
+    '<div class="grid grid-cols-3 gap-1.5">'+photos+'</div>'+
+  '</div>';
+}
+
+function buildTelemetryTab(selected){
+  const metrics = [{label:'DISPLACEMENT',value:'+18.4 mm',color:'#DC2626',sub:'Alarm > 15mm'},{label:'VIBRATION',value:'42.1 mm/s',color:'#DC2626',sub:'Alarm > 30mm/s'}];
+  const metricCards = metrics.map(m=>'<div class="bg-sv-panel rounded px-2.5 py-2 border" style="border-color:'+m.color+'44">'+
+    '<div class="font-mono text-[8px] text-sv-slate tracking-widest mb-1">'+m.label+'</div>'+
+    '<div class="font-display text-[22px] font-bold leading-none" style="color:'+m.color+'">'+m.value+'</div>'+
+    '<div class="font-mono text-[8px] mt-0.5 opacity-70" style="color:'+m.color+'">'+m.sub+'</div></div>').join('');
+
+  const alarmsForMember = alarms.filter(a=>a.tag===selected.tag);
+  let alarmHtml;
+  if(alarmsForMember.length===0){
+    alarmHtml = '<div class="font-mono text-[10px] text-sv-slate text-center py-4">No sensor alarms for this member</div>';
+  } else {
+    alarmHtml = alarmsForMember.map(a=>{
+      const acked = state.ackedAlarms.includes(a.id);
+      return '<div class="bg-sv-panel rounded px-2.5 py-2 mb-1.5 border-l-[3px]" style="border-left-color:'+priorityColor(a.priority)+'">'+
+        '<div class="flex justify-between mb-[3px]"><span class="font-mono text-[9px] font-bold" style="color:'+priorityColor(a.priority)+'">P'+a.priority+'</span><span class="font-mono text-[9px] text-sv-slate">'+a.time+'</span></div>'+
+        '<div class="font-body text-[11px] text-sv-ink leading-relaxed">'+esc(a.message)+'</div>'+
+        (acked ? '<div class="mt-1 flex items-center gap-1"><span class="text-sv-green">'+icon('check-circle','w-[9px] h-[9px]')+'</span><span class="font-mono text-[9px] text-sv-green">Acknowledged</span></div>' :
+          '<button data-action="ack-alarm" data-id="'+a.id+'" class="mt-1.5 px-2.5 py-[3px] bg-sv-surface border border-sv-border rounded font-mono text-[9px] text-sv-blue cursor-pointer">ACKNOWLEDGE</button>')+
+      '</div>';
+    }).join('');
+  }
+
+  return '<div>'+
+    '<div class="grid grid-cols-2 gap-2 mb-3.5">'+metricCards+'</div>'+
+    '<div class="font-mono text-[9px] text-sv-slate tracking-widest mb-2 uppercase">Live Displacement (mm) — Last 15 min</div>'+
+    '<div class="h-[120px] mb-3"><canvas id="dispChart"></canvas></div>'+
+    '<div class="font-mono text-[9px] text-sv-slate tracking-widest mb-2 uppercase">Vibration RMS (mm/s) — Last 15 min</div>'+
+    '<div class="h-[120px]"><canvas id="vibChart"></canvas></div>'+
+    '<div class="mt-3.5"><div class="font-mono text-[9px] text-sv-slate tracking-widest mb-2 uppercase">Sensor Alarms</div>'+alarmHtml+'</div>'+
+  '</div>';
+}
+
+function buildWorkOrdersTab(selected){
+  const paintVol = (selected.paintArea*0.004).toFixed(1)+' L';
+  const abrasive = (selected.paintArea*0.8).toFixed(0)+' kg';
+  const steelMass = (selected.mass*0.15/1000).toFixed(2)+' t';
+  const scope = [{label:'Paint Volume',value:paintVol,sub:'Epoxy primer + finish'},{label:'Abrasive',value:abrasive,sub:'Garnet grit blast'},{label:'Steel Mass',value:steelMass,sub:'Est. replacement'}]
+    .map(m=>'<div><div class="font-display text-lg font-bold text-sv-blue leading-none">'+m.value+'</div><div class="font-mono text-[8px] text-sv-slate mt-0.5">'+m.label+'</div><div class="font-mono text-[8px] text-sv-slate">'+m.sub+'</div></div>').join('');
+
+  const woItems = workOrders.map(wo=>'<div class="bg-sv-panel rounded-md px-3 py-2.5 mb-2 border border-sv-border">'+
+    '<div class="flex justify-between items-start mb-1"><span class="font-mono text-[10px] text-sv-ink">'+wo.id+'</span>'+
+    '<div class="flex gap-1.5"><div class="px-1.5 py-px rounded border '+(wo.status==='Open'?'bg-sv-red-dim border-red-300':'bg-sv-green-dim border-green-300')+'"><span class="font-mono text-[8px] '+(wo.status==='Open'?'text-sv-red':'text-sv-green')+'">'+wo.status.toUpperCase()+'</span></div>'+
+    '<div class="px-1.5 py-px rounded" style="background:'+priorityColor(parseInt(wo.priority[1]))+'22"><span class="font-mono text-[8px]" style="color:'+priorityColor(parseInt(wo.priority[1]))+'">'+wo.priority+'</span></div></div></div>'+
+    '<div class="font-body text-[11px] text-sv-slate mb-1">'+wo.desc+'</div>'+
+    '<div class="flex justify-between items-center"><span class="font-mono text-[9px] text-sv-slate">'+wo.type+' · '+wo.date+'</span><span class="font-display text-sm font-bold text-sv-slate">$'+fmtInt(wo.cost)+'</span></div></div>').join('');
+
+  return '<div>'+
+    '<div class="bg-sv-blue-dim border border-sky-200 rounded-md px-3 py-2.5 mb-3.5">'+
+      '<div class="font-mono text-[9px] text-sv-blue tracking-widest mb-1.5">AUTO-CALCULATED REPAIR SCOPE</div>'+
+      '<div class="grid grid-cols-3 gap-2">'+scope+'</div></div>'+
+    '<button class="w-full py-2.5 mb-3.5 bg-gradient-to-r from-sv-blue-dim to-sky-950 border border-sv-blue rounded-md cursor-pointer flex items-center justify-center gap-1.5">'+
+      icon('plus','w-3 h-3 text-sv-blue')+'<span class="font-display text-sm font-bold text-sv-blue tracking-wide">GENERATE REPAIR WORK ORDER</span></button>'+
+    '<div class="font-mono text-[9px] text-sv-slate tracking-widest mb-2.5 uppercase">Work Order History</div>'+
+    woItems+
+  '</div>';
+}
+
+/* ============================== MAIN RENDER ============================== */
+
+let dispChartInstance = null, vibChartInstance = null;
+
+function render(){
+  const focusEl = document.activeElement;
+  const hadFocus = focusEl && focusEl.dataset && focusEl.dataset.input;
+  const selStart = hadFocus ? focusEl.selectionStart : null;
+  const selEnd = hadFocus ? focusEl.selectionEnd : null;
+
+  const filteredMembers = getFilteredMembers();
+
+  const html =
+    buildHeader()+
+    buildKPIs()+
+    '<div class="flex-1 grid gap-2.5 px-3.5 pb-3.5 overflow-hidden min-h-0" style="grid-template-columns:220px 1fr 380px">'+
+      buildSidebar(filteredMembers)+
+      buildCenter(filteredMembers)+
+      buildRightPanel()+
+    '</div>';
+
+  document.getElementById('app').innerHTML = html;
+
+  if(hadFocus){
+    const el = document.querySelector('[data-input="'+focusEl.dataset.input+'"]');
+    if(el){ el.focus(); try{ el.setSelectionRange(selStart, selEnd); }catch(e){} }
+  }
+
+  if(window.lucide) lucide.createIcons();
+
+  if(state.detailTab==='telemetry'){
+    initTelemetryCharts();
+  }
+}
+
+function initTelemetryCharts(){
+  const dispCanvas = document.getElementById('dispChart');
+  const vibCanvas = document.getElementById('vibChart');
+  if(!dispCanvas || !vibCanvas || !window.Chart) return;
+  const slice = telemetryData.slice(-30);
+  const labels = slice.map(d=>d.t);
+
+  if(dispChartInstance) dispChartInstance.destroy();
+  if(vibChartInstance) vibChartInstance.destroy();
+
+  dispChartInstance = new Chart(dispCanvas.getContext('2d'), {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'Disp mm', data: slice.map(d=>d.disp), borderColor:'#EF4444', borderWidth:1.5, pointRadius:0, tension:0.3 },
+      { label:'Alarm', data: slice.map(()=>15), borderColor:'#F59E0B', borderWidth:1, borderDash:[4,4], pointRadius:0 },
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ ticks:{ font:{family:'JetBrains Mono', size:8}, color:'#64748B', maxTicksLimit:6 }, grid:{ color:'#E2E8F0' } },
+                y:{ ticks:{ font:{family:'JetBrains Mono', size:8}, color:'#64748B' }, grid:{ color:'#E2E8F0' } } }
+    }
+  });
+  vibChartInstance = new Chart(vibCanvas.getContext('2d'), {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'Vib mm/s', data: slice.map(d=>d.vib), borderColor:'#F97316', borderWidth:1.5, pointRadius:0, tension:0.3 },
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ ticks:{ font:{family:'JetBrains Mono', size:8}, color:'#64748B', maxTicksLimit:6 }, grid:{ color:'#E2E8F0' } },
+                y:{ ticks:{ font:{family:'JetBrains Mono', size:8}, color:'#64748B' }, grid:{ color:'#E2E8F0' } } }
+    }
+  });
+}
+
+/* ============================== EVENTS ============================== */
+/* Unchanged — event delegation via data-action doesn't touch styling at all. */
+
+document.addEventListener('click', function(e){
+  const el = e.target.closest('[data-action]');
+  if(!el) return;
+  const action = el.dataset.action;
+
+  if(action === 'stop'){ e.stopPropagation(); return; }
+
+  switch(action){
+    case 'select-member':
+      state.selectedId = el.dataset.id; render(); break;
+    case 'select-bim': {
+      const id = el.dataset.id;
+      state.selectedId = id;
+      state.selectedIds = state.selectedIds.includes(id) ? state.selectedIds.filter(x=>x!==id) : [...state.selectedIds, id];
+      render(); break;
+    }
+    case 'select-group-member': {
+      const id = el.dataset.id;
+      state.selectedId = id;
+      if(!state.selectedIds.includes(id)) state.selectedIds = [...state.selectedIds, id];
+      render(); break;
+    }
+    case 'set-tab': state.detailTab = el.dataset.tab; render(); break;
+    case 'set-colorby': state.colorBy = el.dataset.value; render(); break;
+    case 'set-view': state.view = el.dataset.value; render(); break;
+    case 'toggle-filter': {
+      const map = { Area:'filterArea', Type:'filterType', Cat:'filterCat', Cond:'filterCond', Pri:'filterPri', Sensor:'filterSensor' };
+      const key = map[el.dataset.group];
+      let val = el.dataset.value;
+      if(key==='filterCond' || key==='filterPri') val = parseInt(val,10);
+      state[key] = toggleArr(state[key], val);
+      render(); break;
+    }
+    case 'clear-filters':
+      state.filterArea=[]; state.filterType=[]; state.filterCat=[]; state.filterCond=[]; state.filterPri=[]; state.filterSensor=[];
+      render(); break;
+    case 'toggle-isolate': state.isolateCritical = !state.isolateCritical; render(); break;
+    case 'toggle-groups': state.showProfileGroups = !state.showProfileGroups; render(); break;
+    case 'close-groups': state.showProfileGroups = false; render(); break;
+    case 'toggle-metric': state.metricUnits = !state.metricUnits; render(); break;
+    case 'ack-alarm': state.ackedAlarms = [...state.ackedAlarms, el.dataset.id]; render(); break;
+    case 'set-summary-scope': state.summaryScope = el.dataset.value; render(); break;
+    case 'clear-selected': state.selectedIds = []; render(); break;
+    case 'toggle-collapse': {
+      const key = el.dataset.key;
+      const next = new Set(state.collapsedGroups);
+      next.has(key) ? next.delete(key) : next.add(key);
+      state.collapsedGroups = next;
+      render(); break;
+    }
+    case 'toggle-accordion': {
+      const title = el.dataset.title;
+      const next = new Set(state.openAccordions);
+      next.has(title) ? next.delete(title) : next.add(title);
+      state.openAccordions = next;
+      render(); break;
+    }
+  }
+});
+
+document.addEventListener('click', function(e){
+  if(e.target.closest('[data-action="stop"]')){ e.stopPropagation(); }
+}, true);
+
+document.addEventListener('input', function(e){
+  if(e.target.matches('[data-input="search"]')){
+    state.search = e.target.value;
+    render();
+  }
+});
+
+document.addEventListener('change', function(e){
+  if(e.target.matches('[data-select="groupby"]')){
+    state.summaryGroupBy = e.target.value || null;
+    state.summarySubGroupBy = null;
+    state.collapsedGroups = new Set();
+    render();
+  }
+  if(e.target.matches('[data-select="subgroupby"]')){
+    state.summarySubGroupBy = e.target.value || null;
+    state.collapsedGroups = new Set();
+    render();
+  }
+});
+
+/* ============================== INIT ============================== */
+
+render();
+</script>
+</body>
+</html>

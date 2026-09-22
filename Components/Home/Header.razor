@@ -1,0 +1,230 @@
+﻿@inject IJSRuntime JS
+
+<header class="flex items-center justify-between p-2 flex-shrink-0 bg-white rounded-xl m-2">
+
+    <!-- Logo -->
+    <div class="flex items-center gap-1">
+        <h2>Structure Vision</h2>
+        <h2 class="text-blue-700">BIM</h2>
+    </div>
+
+
+    <!-- Centre section -->
+    <div class="flex items-center justify-center flex-1 h-10 gap-1">
+
+
+        <!-- Site Dropdown -->
+        <div class="relative">
+
+            <button data-action="toggle-dropdown"
+                    class="inline-flex items-center bg-gray-700 rounded-xl h-8 justify-center text-white border border-transparent hover:bg-gray-800 focus:ring-4 focus:ring-gray-300 shadow-sm font-medium leading-5 text-sm px-4 py-2.5 focus:outline-none"
+                    type="button">
+
+                Kalgoorlie Gold Mine - Site A
+
+                <svg class="w-4 h-4 ms-1.5 -me-0.5"
+                     aria-hidden="true"
+                     xmlns="http://www.w3.org/2000/svg"
+                     width="24"
+                     height="24"
+                     fill="none"
+                     viewBox="0 0 24 24">
+
+                    <path stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="m19 9-7 7-7-7" />
+
+                </svg>
+
+            </button>
+
+
+            <!-- Dropdown Menu -->
+            <div class="dropdown-menu hidden absolute z-10 mt-1 bg-white border border-gray-200 rounded-md shadow-lg w-44">
+
+                <ul class="p-2 text-sm text-gray-700 font-medium">
+
+                    <li>
+                        <a href="#"
+                           class="inline-flex items-center w-full p-2 hover:bg-gray-100 hover:text-gray-900 rounded">
+                            Mine Site B
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#"
+                           class="inline-flex items-center w-full p-2 hover:bg-gray-100 hover:text-gray-900 rounded">
+                            Mine Site C
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#"
+                           class="inline-flex items-center w-full p-2 hover:bg-gray-100 hover:text-gray-900 rounded">
+                            Mine Site D
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#"
+                           class="inline-flex items-center w-full p-2 hover:bg-gray-100 hover:text-gray-900 rounded">
+                            Mine Site E
+                        </a>
+                    </li>
+
+                </ul>
+
+            </div>
+
+        </div>
+
+
+        <!-- Search -->
+        <div class="w-2/3 h-full flex items-center justify-center">
+
+            <div class="flex w-full max-w-md h-8 rounded-md overflow-hidden border border-gray-300">
+
+                <input type="text"
+                       placeholder="Search..."
+                       class="flex-1 px-4 text-sm bg-white border-0 focus:outline-none" />
+
+                <button type="button"
+                        class="px-5 bg-blue-200 text-white hover:bg-blue-600">
+                    Search
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Notifications -->
+    <div class="flex items-center flex-1 h-10">
+
+        <!-- Notification button goes here -->
+
+       <!-- Notifications -->
+
+<div class="flex items-center justify-end h-10 ml-auto">
+
+    <div class="relative">
+
+        <!-- Notification button -->
+
+        <button id="dropdownNotificationButton"
+        data-dropdown-toggle="dropdownNotification"
+        type="button"
+        class="relative flex items-center h-8 w-12 px-1 bg-gray-100 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-200 transition">
+
+    <!-- Bell -->
+
+    <div class="flex items-center justify-center w-1/2">
+
+        <svg class="w-5 h-5"
+             aria-hidden="true"
+             xmlns="http://www.w3.org/2000/svg"
+             fill="none"
+             viewBox="0 0 24 24">
+
+            <path stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 5.365V3m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175 0 .593 0 1.292-.538 1.292H5.538C5 18 5 17.301 5 16.708c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.365ZM8.733 18c.094.852.306 1.54.944 2.112a3.48 3.48 0 0 0 4.646 0c.638-.572 1.236-1.26 1.33-2.112h-6.92Z" />
+
+        </svg>
+
+    </div>
+
+    <!-- Notification count -->
+
+    <div class="flex items-center justify-center w-1/2">
+
+        <span class="text-sm font-semibold">
+            1
+        </span>
+
+    </div>
+
+    <!-- Small red dot -->
+
+    
+
+</button>
+
+
+
+        <!-- Notification dropdown -->
+
+        <div id="dropdownNotification"
+             class="hidden absolute right-0 top-11 z-20 w-80 bg-white border border-gray-200 rounded-xl shadow-lg">
+
+            <!-- Header -->
+
+            <div class="px-4 py-3 font-semibold text-gray-800 border-b border-gray-200">
+                Notifications
+            </div>
+
+
+            <!-- Notification -->
+
+            <div class="flex items-start gap-3 p-4">
+
+                <div class="flex-shrink-0 flex items-center justify-center w-9 h-9 bg-red-100 rounded-full">
+
+                    <svg class="w-5 h-5 text-red-600"
+                         aria-hidden="true"
+                         xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 24 24">
+
+                        <path stroke="currentColor"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M12 9v4m0 4h.01M10.3 3.8 2.9 18a2 2 0 0 0 1.8 3h14.6a2 2 0 0 0 1.8-3L13.7 3.8a2 2 0 0 0-3.4 0Z" />
+
+                    </svg>
+
+                </div>
+
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">
+                        The Mine is Shutting down
+                    </p>
+
+                    <p class="text-xs text-gray-500 mt-1">
+                        Notification
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+    </div>
+
+</header>
+
+@code {
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("initDropdown");
+        }
+    }
+
+}
+

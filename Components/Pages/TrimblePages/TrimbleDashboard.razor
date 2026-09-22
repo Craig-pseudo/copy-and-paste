@@ -1,0 +1,51 @@
+﻿
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Components
+@using Microsoft.JSInterop
+
+@implements IAsyncDisposable
+
+@inject IJSRuntime JS
+
+
+@code
+{
+    private IJSObjectReference? _trimbleModule;
+
+    private DotNetObjectReference<TrimbleDashboard>? _dotNetReference;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        // _trimbleModule = await JS.InvokeAsync<IJSObjectReference>(
+        //     "import",
+        //     "/js/trimbleDashboard.js");
+
+        _dotNetReference =
+            DotNetObjectReference.Create(this);
+    }
+
+
+    [JSInvokable]
+    public async Task OnTrimbleEvent(string eventName, object? data)
+    {
+        Console.WriteLine(
+            $"Trimble event: {eventName}");
+    }
+
+
+    public async ValueTask DisposeAsync()
+    {
+        _dotNetReference?.Dispose();
+
+        if (_trimbleModule is not null)
+        {
+            await _trimbleModule.DisposeAsync();
+        }
+    }
+}
+```

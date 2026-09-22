@@ -1,0 +1,36 @@
+﻿@inject IJSRuntime JS
+
+
+<section class="flex flex-1 min-h-0 h-full w-full gap-2">
+
+    <!-- Left side -->
+    <LeftAside />
+
+    <!-- BIM -->
+    <Viewport AccessToken="@AccessToken"/>
+
+    <!-- Right side -->
+    <RightAside />
+
+</section>
+
+@code {
+
+    [Parameter]
+    public string? AccessToken { get; set; }
+
+    private int? selectedItem = null;
+
+    private void ToggleSelected(int itemId)
+    {
+        if (selectedItem == itemId)
+        {
+            selectedItem = null;
+        }
+        else
+        {
+            selectedItem = itemId;
+        }
+    }
+
+}

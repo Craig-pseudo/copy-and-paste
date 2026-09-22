@@ -1,0 +1,147 @@
+﻿@using Vision.Components.Home.RightAsideTabs
+@inject IJSRuntime JS
+
+<!-- repaire score -->
+<div class="border border-blue-200 bg-blue-50 rounded-sm p-3 flex-shrink-0">
+    <p class="text-[11px] font-semibold text-blue-400 tracking-wide mb-2">AUTO-CALCULATED REPAIR SCOPE</p>
+    <div class="grid grid-cols-3 gap-2">
+        <div>
+            <p class="text-lg font-bold text-blue-700">@repairScope.PaintVolumeLitres.ToString("0.0") L</p>
+            <p class="text-[11px] text-gray-500 leading-tight mt-0.5">Paint Volume</p>
+            <p class="text-[11px] text-gray-400 leading-tight">Epoxy primer + finish</p>
+        </div>
+        <div>
+            <p class="text-lg font-bold text-blue-700">@repairScope.AbrasiveKg kg</p>
+            <p class="text-[11px] text-gray-500 leading-tight mt-0.5">Abrasive</p>
+            <p class="text-[11px] text-gray-400 leading-tight">Garnet grit blast</p>
+        </div>
+        <div>
+            <p class="text-lg font-bold text-blue-700">@repairScope.SteelMassTonnes.ToString("0.00") t</p>
+            <p class="text-[11px] text-gray-500 leading-tight mt-0.5">Steel Mass</p>
+            <p class="text-[11px] text-gray-400 leading-tight">Est. replacement</p>
+        </div>
+    </div>
+</div>
+
+<!-- work order button-->
+<button class="w-full py-3 rounded-sm bg-gradient-to-r from-blue-100 via-blue-300 to-blue-900 text-blue-900 font-bold tracking-wide text-sm disabled:opacity-60 flex-shrink-0"
+        disabled="@isGenerating"
+        @onclick="GenerateWorkOrder">
+    @if (isGenerating)
+    {
+        <span>GENERATING...</span>
+    }
+    else
+    {
+        <span>+ GENERATE REPAIR WORK ORDER</span>
+    }
+</button>
+
+<!-- work order history -->
+<div class="flex-1 min-h-0 overflow-y-auto">
+    <p class="text-[11px] font-semibold text-gray-400 tracking-wide mb-2 sticky top-0 bg-white">
+        Work Order History
+    </p>
+
+    @if (!workOrders.Any())
+    {
+        <p class="text-xs text-gray-400">No work orders recorded.</p>
+    }
+    else
+    {
+        <div class="space-y-2 pb-2">
+            @foreach (var wo in workOrders)
+            {
+                <div class="bg-white border border-gray-200 rounded-sm p-3">
+                    <div class="flex items-start justify-between">
+                        <span class="text-xs font-semibold text-orange-500">@wo.Number</span>
+                        <div class="flex gap-1">
+                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-sm @GetStatusBadgeClass(wo.Status)">
+                                @wo.Status.ToString().ToUpper()
+                            </span>
+                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-sm bg-pink-50 text-pink-500 border border-pink-200">
+                                @wo.Priority
+                            </span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-800 font-medium mt-1">@wo.Description</p>
+                    <div class="flex items-end justify-between mt-1">
+                        <p class="text-[11px] text-gray-400">@wo.Category · @wo.Date.ToString("yyyy-MM-dd")</p>
+                        <p class="text-sm font-semibold text-gray-800">@wo.Cost.ToString("C0", costCulture)</p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private enum Tab { Condition, Telemetry, WorkOrders }
+    private Tab activeTab = Tab.Condition;
+    // WORK ORDERS TAB — data + handlers
+
+
+    private enum WorkOrderStatus { Open, InProgress, Complete }
+
+    private record RepairScope(double PaintVolumeLitres, int AbrasiveKg, double SteelMassTonnes);
+
+    private record WorkOrder(
+        string Number,
+        WorkOrderStatus Status,
+        string Priority,
+        string Description,
+        string Category,
+        DateTime Date,
+        decimal Cost);
+
+    private bool isGenerating = false;
+
+    private System.Globalization.CultureInfo costCulture = new("en-ZA");
+
+    private RepairScope repairScope = new(
+        PaintVolumeLitres: 0.1,
+        AbrasiveKg: 23,
+        SteelMassTonnes: 0.17
+    );
+
+    private List<WorkOrder> workOrders = new()
+    {
+        new("WO-2026-1847", WorkOrderStatus.Open, "P1",
+            "Emergency section replacement — flange mid-span",
+            "Structural Repair", new DateTime(2026, 8, 15), 28400m),
+
+        new("WO-2026-1204", WorkOrderStatus.Complete, "P2",
+            "Spot blast & epoxy recoat — mid-span zone",
+            "Coating", new DateTime(2026, 3, 10), 4600m),
+    };
+
+    private async Task GenerateWorkOrder()
+    {
+        isGenerating = true;
+
+        // TODO: replace with actual API call, e.g.:
+        // var newWo = await WorkOrderService.CreateFromScopeAsync(repairScope);
+        await Task.Delay(1000);
+
+        var newWo = new WorkOrder(
+            Number: $"WO-{DateTime.Today:yyyy}-{new Random().Next(1000, 9999)}",
+            Status: WorkOrderStatus.Open,
+            Priority: "P1",
+            Description: "Auto-generated from repair scope calculation",
+            Category: "Structural Repair",
+            Date: DateTime.Today,
+            Cost: 0m // TODO: cost estimation not yet implemented
+        );
+
+        workOrders.Insert(0, newWo);
+        isGenerating = false;
+    }
+
+    private string GetStatusBadgeClass(WorkOrderStatus status) => status switch
+    {
+        WorkOrderStatus.Open => "bg-red-50 text-red-500 border border-red-200",
+        WorkOrderStatus.InProgress => "bg-amber-50 text-amber-600 border border-amber-200",
+        WorkOrderStatus.Complete => "bg-green-50 text-green-600 border border-green-200",
+        _ => "bg-gray-50 text-gray-500 border border-gray-200"
+    };
+}
