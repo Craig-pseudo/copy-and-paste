@@ -1,3 +1,7 @@
 kudu_ssh_user@d1a7acb83eaf:/$ ls -la /home/site/wwwroot/js/
 ls: cannot access '/home/site/wwwroot/js/': No such file or directory
 kudu_ssh_user@d1a7acb83eaf:/$
+
+
+full path
+C:\Users\Craig du Plessis\source\repos\Vision\wwwroot\js\Home.js
