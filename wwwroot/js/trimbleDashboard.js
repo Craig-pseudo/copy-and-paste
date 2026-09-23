@@ -18,18 +18,16 @@ import { openViewerPopup, initialize, requestAccessToken, dispose } from "./trim
  */
 // export {
 //     setElementColors,
-//     selectUnmatchedTrimbleObjects,
 //     selectTrimbleObject,
 //     clearViewerSelection,
 //     getAllFlattenedObjects,
-//     // getAllLoadedObjects,
 //     getFlattenedObjectByRuntimeId,
 //     getSelection,
 //     zoomToSelection
 // } from "./trimbleWorkspace.js";
 
 export { openViewerPopup, initialize, requestAccessToken, dispose };
- 
+
 /**
  * Initializes the embedded Trimble Connect viewer.
  *
@@ -212,6 +210,121 @@ async function loadEmbeddedViewerIframe(iframeElement) {
     });
 }
 
+// Lazily-built, cached once per viewer session: GUID (MS) -> {modelId, runtimeId}.
+// Rebuilt (set back to null) whenever the viewer is disposed.
+let guidToObjectRef = null;
+
+/**
+ * Highlights an object in the embedded 3D viewer by its GUID (MS).
+ *
+ * The GUID -> {modelId, runtimeId} lookup (buildGuidIndex/extractMsGuid
+ * below) is built from confirmed working calls (viewer.getObjects,
+ * viewer.getObjectProperties - same ones already used elsewhere in this
+ * project). The actual highlight call, viewer.setSelection, is NOT yet
+ * confirmed against this Trimble SDK version - it's the standard
+ * documented shape ([{modelId, objectRuntimeIds}], mode), but if this
+ * throws or silently does nothing, check the console error logged here
+ * first and report it back before assuming something else is wrong.
+ */
+export async function selectObjectByGuid(guid) {
+    const workspaceAPI = getWorkspaceApi();
+
+    if (!workspaceAPI?.viewer) {
+        console.warn("[ParaMatic] selectObjectByGuid: no active viewer connection.");
+        return false;
+    }
+
+    try {
+        if (!guidToObjectRef) {
+            console.log("[ParaMatic] Building GUID index from loaded models...");
+            guidToObjectRef = await buildGuidIndex(workspaceAPI);
+            console.log(`[ParaMatic] GUID index built: ${guidToObjectRef.size} objects.`);
+        }
+
+        const ref = guidToObjectRef.get(guid.toLowerCase());
+
+        if (!ref) {
+            console.warn(`[ParaMatic] selectObjectByGuid: no object found for GUID ${guid} in loaded models.`);
+            return false;
+        }
+
+        await workspaceAPI.viewer.setSelection(
+            [{ modelId: ref.modelId, objectRuntimeIds: [ref.runtimeId] }],
+            "set"
+        );
+
+        console.log(`[ParaMatic] Selected object ${guid} (model ${ref.modelId}, runtimeId ${ref.runtimeId}).`);
+
+        return true;
+    } catch (error) {
+        console.error(`[ParaMatic] selectObjectByGuid failed for ${guid}:`, error);
+        return false;
+    }
+}
+
+/**
+ * Walks every loaded model's objects, fetches their properties in
+ * batches, and indexes them by GUID (MS) -> {modelId, runtimeId}.
+ */
+async function buildGuidIndex(workspaceAPI) {
+    const index = new Map();
+
+    const modelGroups = await workspaceAPI.viewer.getObjects();
+
+    for (const modelGroup of modelGroups ?? []) {
+        const modelId = modelGroup.modelId;
+
+        const runtimeIds = (modelGroup.objects ?? [])
+            .map(object => object.id)
+            .filter(Number.isInteger);
+
+        if (!modelId || runtimeIds.length === 0) continue;
+
+        const batchSize = 250;
+
+        for (let i = 0; i < runtimeIds.length; i += batchSize) {
+            const batch = runtimeIds.slice(i, i + batchSize);
+
+            let properties;
+
+            try {
+                properties = await workspaceAPI.viewer.getObjectProperties(modelId, batch);
+            } catch (error) {
+                console.error(`[ParaMatic] getObjectProperties failed for model ${modelId}:`, batch, error);
+                continue;
+            }
+
+            for (const object of properties ?? []) {
+                const msGuid = extractMsGuid(object);
+
+                if (msGuid) {
+                    index.set(msGuid.toLowerCase(), { modelId, runtimeId: object.id });
+                } else {
+                    // Log the raw shape once so we can see the real property
+                    // names/structure if the GUID (MS) property isn't found
+                    // where expected - this is a guess at the property set
+                    // shape based on the "GUID (MS)" label seen in the UI.
+                    console.warn("[ParaMatic] No GUID (MS) property found on object - raw shape:", object);
+                }
+            }
+        }
+    }
+
+    return index;
+}
+
+function extractMsGuid(objectProperties) {
+    for (const set of objectProperties?.properties ?? []) {
+        for (const prop of set?.properties ?? []) {
+            if (typeof prop?.name === "string" && /guid.*\(?ms\)?/i.test(prop.name)) {
+                return prop.value ?? null;
+            }
+        }
+    }
+
+    return null;
+}
+
 /**
  * Refreshes the OAuth token.
  */
@@ -247,6 +360,7 @@ export async function refreshToken(accessToken) {
  * mounted and connected.
  */
 export function disposeViewer() {
+    guidToObjectRef = null;
     disposeSharedViewer();
 }
 
@@ -307,4 +421,3 @@ window.trendChart = {
         return element.getBoundingClientRect().width;
     }
 };
-
