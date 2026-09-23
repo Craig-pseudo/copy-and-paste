@@ -1,4 +1,4 @@
-﻿import {
+import {
     handleViewerEvent,
     disposeViewer
 } from "./trimbleWorkspace.js";
@@ -249,14 +249,6 @@ async function configureMenu() {
         title: "Vision",
         icon: `${BASE_URL}/icon.png`,
         command: "dashboard",
-        subMenus: [
-            {
-                title: "Dashboard",
-                icon: `${BASE_URL}/icon.png`,
-                command: "dashboard"
-            }
-
-        ]
     };
 
     console.log(
