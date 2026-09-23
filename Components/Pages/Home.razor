@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @rendermode InteractiveServer
 
 @inject IJSRuntime Js
@@ -17,7 +17,7 @@
 
             <DashboardCard />
 
-            <BIMViewport AccessToken="@_accessToken" />
+            <BIMViewport AccessToken="@_accessToken" ProjectId="@_projectId" />
 
         </div>
 
@@ -31,6 +31,7 @@
     private DotNetObjectReference<Home>? _dotNetRef;
 
     private string? _accessToken;
+    private string? _projectId;
 
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -42,7 +43,7 @@
 
         _module = await Js.InvokeAsync<IJSObjectReference>(
             "import",
-            "/js/trimbleWorkspace.js");
+            "/js/trimble.js");
 
         var result = await _module.InvokeAsync<TrimbleInitResult>(
             "initialize",
@@ -52,6 +53,8 @@
         {
             Console.WriteLine(
                 $"Connected to Trimble project: {result.Project?.Name}");
+
+            _projectId = result.Project?.Id;
 
             // Ask Trimble for the access token.
             var tokenResult = await _module.InvokeAsync<string?>(
@@ -64,6 +67,50 @@
                 StateHasChanged();
             }
         }
+    }
+
+    
+        public async Task<int?> SelectObjectAsync(
+        string ifcGuid,
+        bool zoomToObject = true)
+    {
+        if (_module is null)
+        {
+            Console.WriteLine(
+                "Cannot select a Trimble object because the JavaScript module is not initialized.");
+
+            return null;
+        }
+
+
+        if (string.IsNullOrWhiteSpace(ifcGuid))
+        {
+            Console.WriteLine(
+                "Cannot select a Trimble object because its IFC GUID is missing.");
+
+            return null;
+        }
+
+        int? runtimeId;
+
+        try
+        {
+
+            runtimeId = await _module.InvokeAsync<int?>(
+                "selectTrimbleObject",
+                "1eTmwOzuWLw",
+                ifcGuid,
+                zoomToObject);
+        }
+        catch (JSException exception)
+        {      
+                Console.WriteLine("Could not select that object in the 3D viewer.");
+
+            return null;
+        }
+
+
+        return runtimeId;
     }
 
 
