@@ -23,7 +23,7 @@ export async function initialize(reference) {
  
     // Register a menu item in the sidebar.
     await api.ui.setMenu({
-        title: "Remote Control Centre",
+        title: "Plant Vision",
         icon: `${BASE_URL}/icon.png`,
         command: "dashboard"
     });
@@ -80,6 +80,10 @@ function handleEvent(event, args) {
         // User clicked your menu item.
         dotNetReference?.invokeMethodAsync("OnTrimbleCommand", data);
     }
+
+    if(event == "viewer.selectionChanged"){
+        console.log("Object has been clicked");
+    }
 }
 
 let viewerApi = null;
@@ -101,7 +105,19 @@ export function getWorkspaceApi() {
 export function handleViewerEvent(event, args) {
     const data = args?.data ?? args;
 
-    console.log("Trimble viewer event:", event, data);
+    if (event === "extension.accessToken") {
+        // Token came in asynchronously (after user approved).
+        dotNetReference?.invokeMethodAsync("OnTrimbleAccessToken", data);
+    }
+ 
+    if (event === "extension.command") {
+        // User clicked your menu item.
+        dotNetReference?.invokeMethodAsync("OnTrimbleCommand", data);
+    }
+
+    if(event == "viewer.onSelectionChanged"){
+        console.log("[Vision]: on object has been selected");
+    }
 
     viewerDotNetReference?.invokeMethodAsync("OnTrimbleEvent", event, data);
 }
