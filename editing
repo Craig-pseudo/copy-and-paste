@@ -1,1363 +1,802 @@
-import {initialize, requestAccessToken, dispose, initializeViewer} from '/js/trimbleDashboard.js';
+ @using Microsoft.AspNetCore.Components
+@using Microsoft.JSInterop
 
-export {initialize, requestAccessToken, dispose, initializeViewer};
+@inject IJSRuntime JS
+
+@implements IAsyncDisposable
+
+<section class="w-5/8 h-[calc(100vh-120px)] bg-white rounded-xl p-0 flex flex-col gap-0">
+
+
+    <!-- TOP: VIEWPORT  -->
+
+
+    <div class="bg-gray-200 flex-[3] min-h-0 rounded-lg overflow-hidden h-2/3 ">
+
+        <!-- trrimble iframe goes here -->
+        <div class="w-full h-full">
+
+            <iframe @ref="_iframeRef"
+                    id="trimbleViewer"
+                    src="https://web.connect.trimble.com/?isEmbedded=true"
+                    title="Trimble Connect 3D Viewer"
+                    class="w-full h-full"
+                    frameborder="0"
+                    allow="fullscreen; clipboard-read; clipboard-write"
+                    allowfullscreen>
+            </iframe>
+        </div>
+
+    </div>
+
+
+    <!-- BOTTOM: DATA GRID   -->
+
+
+    <div class="bg-white  min-h-0 flex flex-col h-1/3">
+
+        <!-- Toolbar -->
+        <div class="text-slate-500 px-2 flex items-center w-full shrink-0 border-b border-gray-300 h-10 p-2">
+
+            <!-- LEFT -->
+            <div class="flex items-center gap-4">
+
+                <!-- All Visible / Selected -->
+                <div class="flex border border-gray-400 rounded-sm overflow-hidden">
+
+                    <div class="px-3 py-0">
+                        All Visible (12)
+                    </div>
+
+                    <div class="px-3 py-0 border-l border-gray-400">
+                        Selected (12)
+                    </div>
+
+                </div>
+
+
+                <!-- Group By -->
+                <div class="flex items-center gap-2">
+
+                    <span>
+                        Group By:
+                    </span>
+
+                    <!-- Dropdown container -->
+                    <div class="flex gap-2 items-center">
+
+
+                        <!-- FIRST DROPDOWN: GROUP -->
+
+                  
+                        <div class="relative">
+
+                            <button @onclick="ToggleGroupDropdown"
+                                    class="inline-flex items-center bg-white rounded-sm h-6 justify-center text-slate-500 border border-gray-400 font-medium leading-5 text-sm px-2 py-0 focus:outline-none"
+                                    type="button">
+
+                                @selectedGroup
+
+                                <svg class="w-3 h-3 ml-1"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M6 9l6 6 6-6">
+                                    </path>
+                                </svg>
+
+                            </button>
+
+
+                            <!-- FIRST DROPDOWN MENU -->
+                            @if (groupDropdownOpen)
+                            {
+                                <div class="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-md shadow-lg w-44">
+
+                                    <ul class="p-2 text-sm text-gray-700 font-medium">
+
+                                        @foreach (var group in groupOptions)
+                                        {
+                                            <li>
+
+                                                <button @onclick="() => SelectGroup(group)"
+                                                        class="inline-flex items-center w-full p-2 hover:bg-gray-100 rounded text-left">
+
+                                                    @group
+
+                                                </button>
+
+                                            </li>
+                                        }
+
+                                    </ul>
+
+                                </div>
+                            }
+
+                        </div>
 
 
 
-let workspaceAPI = null;
-let viewerDotNetReference = null;
-let UnMatchedRuntimeIds = null;
+                        <!-- SECOND DROPDOWN -->
+                        @if (selectedGroup != "None")
+                        {
+                            <div class="relative">
 
-const PROPERTY_BATCH_SIZE = 250;
-const PROPERTY_BATCH_CONCURRENCY = 3;
-const MODEL_CONCURRENCY = 2;
-const GUID_BATCH_SIZE = 50;
-const GUID_BATCH_CONCURRENCY = 2;
+                                <button @onclick="ToggleValueDropdown"
+                                        class="inline-flex items-center bg-white rounded-sm h-6 justify-center text-slate-500 border border-gray-400 font-medium leading-5 text-sm px-2 py-0 focus:outline-none"
+                                        type="button">
 
-/*
- * Plant asset names recognised by the dashboard. Keep this in sync
- * with AllowedTrimbleAssetNames / GetAssetType in
- * TrimbleDashboard.razor / PlantDataService.cs - this is the JS-side
- * mirror used to split "real" plant assets from everything else in
- * the model (structural steel, walkways, etc.) before objects are
- * sent to Blazor.
- */
-const ASSET_NAMES = new Set([
-    "Pre-Conditioner",
-    "Extruder",
-    "Cyclone",
-    "Motor",
-    "Dryer",
-    "Cooler",
-    "Tank",
-    "Valve",
-    "Fan",
-    "Bucket Elevator",
-    "Nebulizer",
-    "Conveyor",
-    "Chute",
-    "Coater",
-    "Surge Bin",
-    "Live Bin"
-]);
+                                    @selectedValue
 
-/*
- * Only these property names are copied onto the flattened object.
- * This must stay in sync with the [JsonPropertyName(...)] members of
- * IfcObjectJson in PlantDataService.cs - anything not read there is
- * dead weight over the SignalR wire and was previously blowing past
- * Blazor Server's default 32 KB message size limit for models with
- * many objects/property sets.
- */
-const IFC_OBJECT_JSON_PROPERTY_NAMES = new Set([
-    "PART_POS",
-    "ASSEMBLY_POS",
-    "Name",
-    "NAME",
-    "PROFILE",
-    "ProfileName",
-    "Material",
-    "MATERIAL_TYPE",
-    "Finish",
-    "Class",
-    "Height",
-    "Width",
-    "Length",
-    "LENGTH_NET",
-    "LENGTH_GROSS",
-    "Area",
-    "Volume",
-    "Weight",
-    "WEIGHT_NET",
-    "WEIGHT_GROSS",
-    "NetWeight"
-]);
+                                    <svg class="w-3 h-3 ml-1"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24"
+                                         xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M6 9l6 6 6-6">
+                                        </path>
+                                    </svg>
 
-/**
- * Sets the DotNetObjectReference the dashboard-related notifications
- * below invoke methods on. Called by TrimbleDashboard.razor.js's
- * initializeViewer() once it has a reference from Blazor.
- */
-export function setViewerDotNetReference(reference) {
-    viewerDotNetReference = reference;
-}
+                                </button>
 
-/**
- * Sets the connected workspaceAPI instance. Called by
- * TrimbleDashboard.razor.js's initializeViewer() once
- * TrimbleConnectWorkspace.connect() resolves.
- */
-export function setWorkspaceApi(api) {
-    workspaceAPI = api;
-}
 
-export function getWorkspaceApi() {
-    return workspaceAPI;
-}
+                                <!-- SECOND DROPDOWN MENU -->
+                                @if (valueDropdownOpen)
+                                {
+                                    <div class="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-md shadow-lg w-44">
 
-/**
- * Tears down the embedded 3D viewer connection only. Exported so both
- * TrimbleDashboard.razor.js (Blazor calls this directly when the
- * dashboard component is disposed) and trimble-extension.js's
- * dispose() (which also needs to null this out) can use the same
- * implementation.
- */
-export function disposeViewer() {
-    console.log(
-        "[ParaMatic] Disposing the embedded 3D viewer connection."
-    );
+                                        <ul class="p-2 text-sm text-gray-700 font-medium">
 
-    workspaceAPI = null;
-    viewerDotNetReference = null;
-}
+                                            @foreach (var value in CurrentValues)
+                                            {
+                                                <li>
 
-function getViewer() {
-    if (!workspaceAPI?.viewer) {
-        console.error("Trimble viewer is not initialized.");
-        return null;
-    }
+                                                    <button @onclick="() => SelectValue(value)"
+                                                            class="inline-flex items-center w-full p-2 hover:bg-gray-100 rounded text-left">
 
-    return workspaceAPI.viewer;
-}
+                                                        @value
 
-async function notifyViewerDotNet(
-    methodName,
-    value
-) {
-    if (!viewerDotNetReference) {
-        console.warn(
-            `[ParaMatic] Cannot invoke dashboard method ` +
-            `'${methodName}' because the dashboard reference ` +
-            `is unavailable.`
-        );
+                                                    </button>
 
-        return;
-    }
+                                                </li>
+                                            }
 
-    try {
-        if (value === undefined) {
-            await viewerDotNetReference.invokeMethodAsync(
-                methodName);
-        } else {
-            await viewerDotNetReference.invokeMethodAsync(
-                methodName,
-                value);
+                                        </ul>
+
+                                    </div>
+                                }
+
+                            </div>
+                        }
+
+                    </div>
+
+
+                </div>
+
+
+
+            </div>
+
+
+            <!-- RIGHT -->
+            <div class="ml-auto">
+            </div>
+
+        </div>
+
+
+        <!-- TABLE -->
+        <div class="flex-1 min-h-0 overflow-auto bg-white  shadow-md">
+
+            <table id="productTable"
+                   class="w-full text-left table-auto">
+                <!--Table headings-->
+                <thead class="bg-white ">
+                    <tr>
+
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Condition
+                            </p>
+                        </th>
+
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Members
+                            </p>
+                        </th>
+
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Length (m)
+                            </p>
+                        </th>
+
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Mass(Kg)
+                            </p>
+                        </th>
+
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Paint (m²)
+                            </p>
+                        </th>
+                        <th class="px-3 py-2 border-b border-slate-300 bg-slate-50">
+                            <p class="text-sm font-medium text-slate-500">
+                                Avg kg/m
+                            </p>
+                        </th>
+
+                    </tr>
+                </thead>
+
+
+                <tbody>
+
+                    <!-- C1 - Critical -->
+                    <tr class="hover:bg-slate-50 text-sm">
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200 text-red-600">
+                            C1 - Critical
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            2
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            17.5
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            1 284
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            35.0
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            73.4
+                        </td>
+
+                    </tr>
+
+
+                    <!-- C2 - Poor -->
+                    <tr class="hover:bg-slate-50 text-sm">
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200 text-red-400">
+                            C2 - Poor
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            3
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            17.2
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            1 200
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            37.4
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            69.8
+                        </td>
+
+                    </tr>
+
+
+                    <!-- C3 - Moderate -->
+                    <tr class="hover:bg-slate-50 text-sm">
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200 text-orange-500">
+                            C3 - Moderate
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            3
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            27.8
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            2 108
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            52.8
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            75.8
+                        </td>
+
+                    </tr>
+
+
+                    <!-- C4 - Good -->
+                    <tr class="hover:bg-slate-50 text-sm">
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200 text-green-400">
+                            C4 - Good
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            2
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            15.4
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            1 058
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            24.8
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            68.7
+                        </td>
+
+                    </tr>
+
+
+                    <!-- C5 - Acceptable -->
+                    <tr class="hover:bg-slate-50 text-sm">
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200 text-green-700">
+                            C5 - Acceptable
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            2
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            18.0
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            1 660
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            34.2
+                        </td>
+
+                        <td class="h-8 px-3 py-0 border-b border-slate-200">
+                            92.2
+                        </td>
+
+                    </tr>
+
+
+
+
+                </tbody>
+
+
+                <tfoot>
+                    <tr>
+
+                        <!-- Condition -->
+                        <td class="px-3 py-2 text-left font-bold text-slate-800 border-t border-slate-300">
+                            TOTAL
+                        </td>
+
+                        <!-- Members -->
+                        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
+                            12
+                        </td>
+
+                        <!-- Length -->
+                        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
+                            95.9
+                        </td>
+
+                        <!-- Mass -->
+                        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
+                            7 310
+                        </td>
+
+                        <!-- Paint -->
+                        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
+                            184.2
+                        </td>
+
+                        <!-- Average kg/m -->
+                        <td class="px-3 py-2 font-bold text-slate-800 border-t border-slate-300">
+                            —
+                        </td>
+
+                    </tr>
+                </tfoot>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+@code {
+
+    [Parameter]
+    public string? AccessToken { get; set; }
+
+    [Parameter]
+    public string? ProjectId { get; set; }
+
+    private ElementReference _iframeRef;
+
+    private IJSObjectReference? _trimbleModule;
+
+    private bool _viewerInitialized;
+    private bool _viewerInitializing;
+
+
+
+
+    // DROPDOWN STATE
+
+
+    private bool groupDropdownOpen = false;
+    private bool valueDropdownOpen = false;
+
+
+
+    // CURRENT SELECTIONS
+
+
+    private string selectedGroup = "None";
+    private string selectedValue = "Select...";
+
+
+
+    // FIRST DROPDOWN OPTIONS
+
+
+    private List<string> groupOptions = new()
+    {
+        "None",
+        "Condition",
+        "Priority",
+        "Structure Type",
+        "Category",
+        "Area",
+        "Profile"
+    };
+
+
+    // SECOND DROPDOWN OPTIONS
+
+
+    private Dictionary<string, List<string>> groupValues = new()
+    {
+        ["Condition"] = new()
+        {
+            "None",
+            "Priority",
+            "Structure Type",
+            "Category",
+            "Area",
+            "Profile"
+        },
+
+        ["Priority"] = new()
+        {
+            "None",
+        "Condition",
+        "Structure Type",
+        "Category",
+        "Area",
+        "Profile"
+        },
+
+        ["Structure Type"] = new()
+        {
+            "None",
+        "Condition",
+        "Priority",
+        "Category",
+        "Area",
+        "Profile"
+        },
+
+        ["Category"] = new()
+        {
+            "None",
+        "Condition",
+        "Priority",
+        "Structure Type",
+        "Area",
+        "Profile"
+        },
+
+        ["Area"] = new()
+        {
+            "None",
+        "Condition",
+        "Priority",
+        "Structure Type",
+        "Category",
+        "Profile"
+        },
+
+        ["Profile"] = new()
+        {
+            "None",
+        "Condition",
+        "Priority",
+        "Structure Type",
+        "Category",
+        "Area"
         }
-    } catch (error) {
-        console.error(
-            `[ParaMatic] Failed to invoke dashboard method ` +
-            `'${methodName}'.`,
-            error
-        );
-    }
-}
+    };
 
-function delay(milliseconds) {
-    return new Promise(resolve =>
-        window.setTimeout(resolve, milliseconds)
-    );
-}
 
-async function normalizeViewerSelection(eventData) {
-    const source =
-        eventData?.data ??
-        eventData?.selection ??
-        eventData ??
-        [];
+    // GET OPTIONS FOR SECOND DROPDOWN
 
-    const groups = Array.isArray(source)
-        ? source
-        : Array.isArray(source?.selection)
-            ? source.selection
-            : [];
 
-    const result = [];
-
-    for (const group of groups) {
-        const modelId =
-            group?.modelId ??
-            group?.model?.id ??
-            null;
-
-        const runtimeIds =
-            Array.isArray(group?.objectRuntimeIds)
-                ? group.objectRuntimeIds
-                : [];
-
-        for (const value of runtimeIds) {
-            const runtimeId = Number(value);
-
-            if (!Number.isInteger(runtimeId)) {
-                continue;
+    private IEnumerable<string> CurrentValues
+    {
+        get
+        {
+            if (groupValues.TryGetValue(selectedGroup, out var values))
+            {
+                return values;
             }
 
-            result.push({
-                modelId,
-                runtimeId,
-                objectId: null,
-                ifcGuid: null,
-                msGuid: null
-            });
-        }
-
-        // Also support a flat single-object event.
-        const singleRuntimeId = Number(
-            group?.runtimeId ??
-            group?.objectRuntimeId);
-
-        if (
-            Number.isInteger(singleRuntimeId) &&
-            !runtimeIds.includes(singleRuntimeId)
-        ) {
-            result.push({
-                modelId,
-                runtimeId: singleRuntimeId,
-                objectId: group?.objectId ?? null,
-                ifcGuid: null,
-                msGuid: group?.msGuid ?? group?.guid ?? null
-            });
+            return Enumerable.Empty<string>();
         }
     }
 
-    /*
-     * Resolve ifcGuid per model, since convertToObjectIds (like
-     * convertToObjectRuntimeIds) is scoped to a single model and
-     * batching per-model avoids one round trip per selected object.
-     */
-    const entriesByModelId = new Map();
 
-    for (const entry of result) {
-        if (!isNonEmptyString(entry.modelId)) {
-            continue;
-        }
+    // FIRST DROPDOWN
 
-        if (!entriesByModelId.has(entry.modelId)) {
-            entriesByModelId.set(entry.modelId, []);
-        }
 
-        entriesByModelId.get(entry.modelId).push(entry);
+    private void ToggleGroupDropdown()
+    {
+        groupDropdownOpen = !groupDropdownOpen;
+
+        // Close second dropdown
+        valueDropdownOpen = false;
     }
 
-    await mapWithConcurrency(
-        [...entriesByModelId.entries()],
-        MODEL_CONCURRENCY,
-        async ([modelId, entries]) => {
-            const runtimeIds = entries.map(entry => entry.runtimeId);
 
-            const guidMap = await getIfcGuidsByRuntimeId(
-                modelId,
-                runtimeIds
-            );
+    private void SelectGroup(string group)
+    {
+        selectedGroup = group;
 
-            for (const entry of entries) {
-                entry.ifcGuid = guidMap.get(entry.runtimeId) ?? null;
-            }
-        }
-    );
+        // Close first dropdown
+        groupDropdownOpen = false;
 
-    return result;
-}
+        // Reset second selection
+        selectedValue = "Select...";
 
-export async function selectUnmatchedTrimbleObjects(unmatchedIds) {
-    if (!workspaceAPI) {
-        return 0;
+        // Close second dropdown
+        valueDropdownOpen = false;
     }
 
-    // If the caller didn't supply explicit ids, use the ids cached
-    // from the last partitionObjectsByAssetName() run.
-    if (!Array.isArray(unmatchedIds) || unmatchedIds.length === 0) {
-        if (!UnMatchedRuntimeIds || UnMatchedRuntimeIds.size === 0) {
-            console.warn(
-                "[ParaMatic] No cached unmatched runtime IDs available " +
-                "to select."
-            );
 
-            return 0;
-        }
+    // SECOND DROPDOWN
 
-        unmatchedIds = [...UnMatchedRuntimeIds.entries()]
-            .flatMap(([modelId, runtimeIds]) =>
-                runtimeIds.map(runtimeId => ({ modelId, runtimeId })));
+    private void ToggleValueDropdown()
+    {
+        valueDropdownOpen = !valueDropdownOpen;
     }
 
-    const idsByModel = new Map();
 
-    for (const item of unmatchedIds) {
-        const modelId = item?.modelId ?? item?.ModelId;
-        const runtimeId = item?.runtimeId ?? item?.RuntimeId;
+    private void SelectValue(string value)
+    {
+        selectedValue = value;
 
-        if (!modelId || !Number.isInteger(runtimeId)) {
-            continue;
-        }
-
-        if (!idsByModel.has(modelId)) {
-            idsByModel.set(modelId, []);
-        }
-
-        idsByModel.get(modelId).push(runtimeId);
+        valueDropdownOpen = false;
     }
 
-    const modelObjectIds = [...idsByModel.entries()]
-        .map(([modelId, runtimeIds]) => ({
-            modelId,
-            objectRuntimeIds: runtimeIds
-        }));
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
 
-    const selector = { modelObjectIds };
-
-    await workspaceAPI.viewer.setObjectState(
-        undefined,
-        { opacity: 0.25 }
-    );
-
-    await workspaceAPI.viewer.setObjectState(
-        selector,
+        try
         {
-            visible: true,
-            opacity: 1
+            _trimbleModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import",
+                "/js/trimble.js");
         }
-    );
-
-    await workspaceAPI.viewer.setSelection(
-        selector,
-        "set"
-    );
-
-    return modelObjectIds.reduce(
-        (count, group) =>
-            count + group.objectRuntimeIds.length,
-        0
-    );
-}
-
-async function loadDashboardObjectsWhenReady(
-    expectedModelId,
-    maxAttempts = 30,
-    delayMs = 500
-) {
-    if (!workspaceAPI) {
-        console.warn(
-            "[ParaMatic] Cannot load dashboard objects because " +
-            "Workspace API is unavailable."
-        );
-
-        return;
-    }
-
-    console.log(
-        "[ParaMatic] Waiting for Trimble model objects...",
+        catch (Exception ex)
         {
-            expectedModelId
-        }
-    );
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-            const modelGroups =
-                await workspaceAPI.viewer.getObjects();
-
-            console.log(
-                `[ParaMatic] getObjects attempt ${attempt}/${maxAttempts}`,
-                modelGroups
-            );
-
-            if (
-                Array.isArray(modelGroups) &&
-                modelGroups.length > 0
-            ) {
-                const hasObjects =
-                    modelGroups.some(group => {
-                        const runtimeIds =
-                            getRuntimeIds(group);
-
-                        return runtimeIds.length > 0;
-                    });
-
-                if (hasObjects) {
-                    console.log(
-                        "[ParaMatic] Model objects are available."
-                    );
-
-                    await sendLoadedObjectsToDashboard();
-
-                    return;
-                }
-            }
-        } catch (error) {
-            console.warn(
-                `[ParaMatic] Model object check ${attempt} failed.`,
-                error
-            );
-        }
-
-        await delay(delayMs);
-    }
-
-    console.error(
-        "[ParaMatic] Timed out waiting for model objects.",
-        {
-            expectedModelId,
-            maxAttempts
-        }
-    );
-}
-
-async function sendLoadedObjectsToDashboard() {
-    try {
-        console.log(
-            "[ParaMatic] Retrieving flattened model objects..."
-        );
-
-        const objects =
-            await getAllFlattenedObjects();
-
-        console.log(
-            `[ParaMatic] Retrieved ${objects.length} flattened objects.`,
-            objects
-        );
-
-        if (objects.length === 0) {
-            console.warn(
-                "[ParaMatic] No flattened Trimble objects were returned."
-            );
-
+            // Guard against an unhandled exception here killing the whole
+            // Blazor circuit - this must fail soft, not take the app down.
+            Console.WriteLine($"Failed to load trimbleDashboard.js: {ex.Message}");
             return;
         }
 
-        const { matched, unmatchedRuntimeIds } =
-            partitionObjectsByAssetName(objects);
+        await InitializeTrimbleViewerAsync();
+    }
 
-        console.log(
-            `[ParaMatic] ${matched.length} objects matched a configured ` +
-            `asset name. ${objects.length - matched.length} did not.`,
-            { unmatchedRuntimeIds }
-        );
+    protected override async Task OnParametersSetAsync()
+    {
+        // AccessToken/ProjectId arrive asynchronously from Home.razor,
+        // after Viewport's first render - so this has to re-attempt
+        // initialization whenever they change. InitializeTrimbleViewerAsync
+        // itself is a no-op once _viewerInitialized is true, so this is
+        // safe to call on every parameter update.
+        await InitializeTrimbleViewerAsync();
+    }
 
-        if (matched.length === 0) {
-            console.warn(
-                "[ParaMatic] No objects matched a configured asset name."
-            );
+    private async Task InitializeTrimbleViewerAsync()
+    {
+        if (_viewerInitialized)
+            return;
 
+        // OnParametersSetAsync can re-fire on every re-render anywhere
+        // up the tree (a dropdown toggle, a list selection, etc.), not
+        // just when AccessToken/ProjectId actually change. Without this
+        // guard, an overlapping call could start while the first one is
+        // still awaiting init3DViewer, causing the iframe to be reset
+        // mid-load - repeatedly - which looks like an endless spinner.
+        if (_viewerInitializing)
+            return;
+
+        if (string.IsNullOrWhiteSpace(AccessToken))
+        {
+            Console.WriteLine("Trimble: waiting for access token.");
             return;
         }
 
-        // await dimUnmatchedObjects(unmatchedRuntimeIds);
+        if (string.IsNullOrWhiteSpace(ProjectId))
+        {
+            Console.WriteLine("Trimble: waiting for project ID.");
+            return;
+        }
 
-        console.log(
-            "[ParaMatic] Sending objects to Blazor dashboard..."
-        );
-
-        await notifyViewerDotNet(
-            "OnTrimbleModelObjectsLoaded",
-            matched
-        );
-
-        console.log(
-            "[ParaMatic] Objects successfully sent to Blazor dashboard."
-        );
-    } catch (error) {
-        console.error(
-            "[ParaMatic] Failed to send model objects to dashboard.",
-            error
-        );
-    }
-}
-
-/**
- * Dims every object that didn't match a configured asset name, so
- * the plant assets sent to the dashboard stand out visually.
- *
- * @param {Map<string, number[]>} unmatchedRuntimeIdsByModel
- */
-async function dimUnmatchedObjects(unmatchedRuntimeIdsByModel) {
-    const viewer = getViewer();
-
-    if (!viewer || unmatchedRuntimeIdsByModel.size === 0) {
-        return;
-    }
-
-    const modelObjectIds = [...unmatchedRuntimeIdsByModel.entries()]
-        .filter(([, runtimeIds]) => runtimeIds.length > 0)
-        .map(([modelId, runtimeIds]) => ({
-            modelId,
-            objectRuntimeIds: runtimeIds
-        }));
-
-    if (modelObjectIds.length === 0) {
-        return;
-    }
-
-    try {
-        await viewer.setObjectState(
-            { modelObjectIds },
-            { opacity: 0.3 }
-        );
-    } catch (error) {
-        console.error(
-            "[ParaMatic] Failed to dim non-asset objects.",
-            error
-        );
-    }
-}
-
-/**
- * Handles events from the connected workspaceAPI - called directly as
- * the callback passed to TrimbleConnectWorkspace.connect() in
- * TrimbleDashboard.razor.js's initializeViewer(), and indirectly via
- * trimble-extension.js's handleTrimbleEvent() default case (for when
- * the extension shell's own `api` connection reports a viewer event).
- */
-export async function handleViewerEvent(event, data) {
-
-    console.log(
-        "[ParaMatic] Viewer event:",
-        event,
-        data
-    );
-
-    if (event === "viewer.onModelStateChanged") {
-        await handleModelStateChanged(data);
-        return;
-    }
-
-    if (event !== "viewer.onSelectionChanged") {
-        return;
-    }
-
-    const selections =
-        await normalizeViewerSelection(data);
-
-    if (selections.length === 0) {
-        await notifyViewerDotNet(
-            "OnTrimbleSelectionCleared"
-        );
-
-        return;
-    }
-
-    await notifyViewerDotNet(
-        "OnTrimbleSelectionChanged",
-        selections
-    );
-}
-
-/**
- * Fired whenever a model's load state changes in the embedded
- * viewer. `init3DViewer` only kicks off loading - it does not wait
- * for the model geometry to finish loading - so object properties
- * must be queried only after this reports "loaded", not immediately
- * after `init3DViewer` resolves.
- */
-async function handleModelStateChanged(data) {
-    console.log(
-        "[ParaMatic] viewer.onModelStateChanged:",
-        data
-    );
-
-    const state =
-        data?.data?.state ??
-        data?.state;
-
-    console.log(
-        "[ParaMatic] Model state:",
-        state
-    );
-
-    if (state !== "loaded") {
-        return;
-    }
-
-    /*
-     * Previously called sendLoadedObjectsToDashboard() here, which
-     * queried properties for EVERY object in the model and sent them
-     * all to Blazor as soon as the model finished loading. That's no
-     * longer wanted - the dashboard should only ever learn about a
-     * specific object when the user selects it in the viewer and
-     * clicks "Add Asset", via getFlattenedObjectByRuntimeId() below.
-     */
-}
-
-/**
- * Gets the currently selected model objects.
- */
-export async function getSelection() {
-
-    if (!workspaceAPI)
-        return [];
-
-    try {
-
-        return await workspaceAPI.viewer.getSelection();
-
-    }
-    catch (e) {
-
-        console.error(e);
-        return [];
-    }
-}
-
-/**
- * Zoom to selected objects.
- */
-export async function zoomToSelection() {
-
-    if (!workspaceAPI)
-        return;
-
-    try {
-
-        const selection =
-            await workspaceAPI.viewer.getSelection();
-
-        if (selection.length === 0)
+        if (_trimbleModule is null)
             return;
 
-        await workspaceAPI.viewer.zoomToSelection(selection);
+        _viewerInitializing = true;
 
-    }
-    catch (e) {
-
-        console.error(e);
-    }
-}
-
-export async function selectTrimbleObject(
-    modelId = "1eTmwOzuWLw",
-    ifcGuid,
-    zoomToObject = true
-) {
-    console.log(
-        "[Trimble] selectTrimbleObject called",
+        try
         {
-            modelId,
+            var initialized = await _trimbleModule.InvokeAsync<bool>(
+                "initializeViewer",
+                _iframeRef,
+                AccessToken,
+                ProjectId,
+                "1eTmwOzuWLw", // TODO: still hardcoded - needs to come from the real model-state event instead of a literal
+                null);
+
+            if (initialized)
+            {
+                _viewerInitialized = true;
+
+                Console.WriteLine(
+                    "Trimble 3D viewer initialized successfully.");
+            }
+            else
+            {
+                Console.WriteLine(
+                    "Trimble 3D viewer failed to initialize.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"Trimble viewer initialization error: {ex}");
+        }
+        finally
+        {
+            _viewerInitializing = false;
+        }
+    }
+
+    /// <summary>
+    /// Highlights the given object (by GUID (MS)) in the embedded 3D
+    /// viewer. Called from BIMViewport when a member is clicked in
+    /// LeftAside.
+    ///
+    /// NOTE: the JS-side selectObjectByGuid builds a GUID index from
+    /// confirmed API calls, but its actual highlight call
+    /// (viewer.setSelection) is not yet confirmed against this Trimble
+    /// SDK version - see trimbleDashboard.js for details.
+    /// </summary>
+//     public async Task SelectObjectAsync(string ifcGuid)
+// {
+//     if (_trimbleModule is null)
+//     {
+//         Console.WriteLine(
+//             "Trimble: viewer module not loaded yet, cannot select object.");
+//         return;
+//     }
+
+//     try
+//     {
+//         await _trimbleModule.InvokeVoidAsync(
+//             "selectTrimbleObject",
+//             "1eTmwOzuWLw",
+//             ifcGuid,
+//             true);
+//     }
+//     catch (Exception ex)
+//     {
+//         Console.WriteLine(
+//             $"Trimble: failed to select IFC object {ifcGuid}: {ex.Message}");
+//     }
+// }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_trimbleModule is not null)
+        {
+            try
+            {
+                await _trimbleModule.InvokeVoidAsync(
+                    "disposeViewer");
+            }
+            catch
+            {
+                // Viewer may already be disconnected.
+            }
+
+            await _trimbleModule.DisposeAsync();
+        }
+    }
+
+public async Task SelectObjectAsync(string ifcGuid)
+{
+    Console.WriteLine(
+        $"[Viewport] Selecting IFC GUID: {ifcGuid}");
+
+    if (_trimbleModule is null)
+    {
+        Console.WriteLine(
+            "[Viewport] Trimble module is NULL.");
+        return;
+    }
+
+    try
+    {
+        await _trimbleModule.InvokeVoidAsync(
+            "selectTrimbleObject",
+            "1eTmwOzuWLw",
             ifcGuid,
-            zoomToObject
-        }
-    );
+            true);
 
-    const normalizedModelId =
-        typeof modelId === "string"
-            ? modelId.trim()
-            : "";
-
-    const normalizedIfcGuid =
-        typeof ifcGuid === "string"
-            ? ifcGuid.trim()
-            : "";
-
-    if (!normalizedModelId || !normalizedIfcGuid) {
-        console.warn(
-            "[ParaMatic] Model ID or IFC GUID is missing."
-        );
-
-        return null;
+        Console.WriteLine(
+            "[Viewport] selectTrimbleObject completed.");
     }
-
-    try {
-        const runtimeIds =
-            await workspaceAPI.viewer.convertToObjectRuntimeIds(
-                normalizedModelId,
-                [normalizedIfcGuid]
-            );
-        console.log(
-            "[Trimble] IFC GUID converted to runtime ID:",
-            {
-                ifcGuid: normalizedIfcGuid,
-                runtimeIds
-            }
-        );
-
-        if (
-            !Array.isArray(runtimeIds) ||
-            runtimeIds.length === 0 ||
-            runtimeIds[0] == null
-        ) {
-            console.warn(
-                `[ParaMatic] No runtime ID found for IFC GUID ${normalizedIfcGuid}.`
-            );
-
-            return null;
-        }
-
-        const runtimeId = runtimeIds[0];
-
-        const selectedSelector = {
-            modelObjectIds: [
-                {
-                    modelId: normalizedModelId,
-                    objectRuntimeIds: [runtimeId]
-                }
-            ]
-        };
-
-        /*
-         * Dim everything in the viewer first, then highlight just the
-         * selected object below. undefined means the ObjectState is
-         * applied to all objects in all loaded models - this used to
-         * dim only "unmatched" objects via UnMatchedRuntimeIds, but
-         * that's only ever populated by the bulk auto-load flow, which
-         * no longer runs (objects are now only fetched on demand, one
-         * at a time, when the user selects them and clicks Add Asset).
-         * UnMatchedRuntimeIds is therefore always null here now, which
-         * is what was throwing.
-         */
-        await workspaceAPI.viewer.setObjectState(
-            undefined,
-            { opacity: 0.3 }
-        );
-
-        /*
-         * Highlight the selected object.
-         */
-        await workspaceAPI.viewer.setObjectState(
-            selectedSelector,
-            {
-                visible: true,
-                opacity: 1.0
-            }
-        );
-
-        /*
-         * Select the object.
-         */
-        await workspaceAPI.viewer.setSelection(
-            selectedSelector,
-            "set"
-        );
-
-        /*
-         * Focus camera on selected object.
-         */
-        if (zoomToObject) {
-            await workspaceAPI.viewer.setCamera(
-                selectedSelector,
-                {
-                    animationTime: 500
-                }
-            );
-        }
-
-        return runtimeId;
-    }
-    catch (error) {
-        console.error(
-            `[ParaMatic] Failed to select IFC GUID ${normalizedIfcGuid}.`,
-            error
-        );
-
-        return null;
+    catch (Exception ex)
+    {
+        Console.WriteLine(
+            $"[Viewport] Selection failed: {ex}");
     }
 }
 
-async function getAllObjectsSelector(workspaceAPI) {
-    const models = await workspaceAPI.viewer.getModels();
 
-    const modelObjectIds = await Promise.all(
-        models.map(async (m) => {
-            const objects = await workspaceAPI.viewer.getObjects({
-                modelObjectIds: [{ modelId: m.id }]
-            });
 
-            const runtimeIds = (objects || [])
-                .flatMap((o) => o.objects || [])
-                .map((o) => o.id);
 
-            return {
-                modelId: m.id,
-                objectRuntimeIds: runtimeIds
-            };
-        })
-    );
-
-    return { modelObjectIds };
 }
-
-export async function clearViewerSelection() {
-    if (!workspaceAPI) {
-        return;
-    }
-
-    try {
-        await workspaceAPI.viewer.setSelection(
-            {
-                modelObjectIds: []
-            },
-            "set"
-        );
-
-        /*
-         * Restore full opacity for all objects.
-         */
-        await workspaceAPI.viewer.setObjectState(
-            undefined,
-            {
-                opacity: 1
-            }
-        );
-    }
-    catch (error) {
-        console.error(
-            "[ParaMatic] Failed to clear viewer selection.",
-            error
-        );
-    }
-}
-
-/**
- * Splits flattened Trimble objects into recognised plant assets and
- * everything else, based on the object's "Name" (falling back to
- * "NAME") property.
- *
- * @param {object[]} flattenedObjects Objects returned by getAllFlattenedObjects.
- * @returns {{ matched: object[], unmatchedRuntimeIds: Map<string, number[]> }}
- *   `unmatchedRuntimeIds` is keyed by modelId, since viewer selectors
- *   (e.g. for setObjectState) are always scoped to a single model.
- */
-function partitionObjectsByAssetName(flattenedObjects) {
-    const matched = [];
-    const unmatchedRuntimeIds = new Map();
-
-    for (const object of flattenedObjects) {
-        const name = (object?.Name ?? object?.NAME ?? "").trim();
-
-        if (ASSET_NAMES.has(name)) {
-            matched.push(object);
-            continue;
-        }
-
-        if (!unmatchedRuntimeIds.has(object.modelId)) {
-            unmatchedRuntimeIds.set(object.modelId, []);
-        }
-
-        unmatchedRuntimeIds.get(object.modelId).push(object.runtimeId);
-    }
-
-    UnMatchedRuntimeIds = unmatchedRuntimeIds;
-
-    return { matched, unmatchedRuntimeIds };
-}
-
-/**
- * Fetches and flattens a single object's properties, by modelId +
- * runtimeId, on demand. This is the JS-side counterpart to the new
- * "select an object in the viewer, then click Add Asset" flow -
- * unlike getAllFlattenedObjects()/getAllLoadedObjects(), this never
- * touches any object other than the one requested, so it's safe to
- * call on click rather than only at model-load time.
- *
- * @param {string} modelId
- * @param {number} runtimeId
- * @returns {Promise<object|null>}
- */
-export async function getFlattenedObjectByRuntimeId(modelId, runtimeId) {
-    const viewer = getViewer();
-
-    if (!viewer) {
-        console.warn(
-            "[ParaMatic] Cannot fetch object properties - the viewer is not connected."
-        );
-
-        return null;
-    }
-
-    if (!isNonEmptyString(modelId) || !Number.isInteger(runtimeId)) {
-        console.warn(
-            "[ParaMatic] getFlattenedObjectByRuntimeId requires a modelId " +
-            "and an integer runtimeId.",
-            { modelId, runtimeId }
-        );
-
-        return null;
-    }
-
-    try {
-        const properties = await getObjectPropertiesInBatches(
-            modelId,
-            [runtimeId],
-            1
-        );
-
-        if (!properties || properties.length === 0) {
-            console.warn(
-                `[ParaMatic] No properties found for runtime ID ${runtimeId} ` +
-                `in model ${modelId}.`
-            );
-
-            return null;
-        }
-
-        const guidMap = await getIfcGuidsByRuntimeId(modelId, [runtimeId]);
-
-        return flattenTrimbleObject(
-            modelId,
-            properties[0],
-            guidMap.get(runtimeId) ?? null
-        );
-    } catch (error) {
-        console.error(
-            `[ParaMatic] Failed to fetch properties for runtime ID ${runtimeId} ` +
-            `in model ${modelId}:`,
-            error
-        );
-
-        return null;
-    }
-}
-
-export async function getAllFlattenedObjects() {
-    try {
-        const groupedObjects = await getAllLoadedObjects();
-
-        const flattenedGroups = await mapWithConcurrency(
-            groupedObjects,
-            MODEL_CONCURRENCY,
-            group => flattenModelObjects(group.modelId, group.objects)
-        );
-
-        const flattened = flattenedGroups.flat();
-
-        console.info(
-            `[Trimble Objects] Returning ${flattened.length} flattened objects.`, flattened
-        );
-
-        return flattened;
-    } catch (error) {
-        console.error("[Trimble Objects] Failed to flatten objects:", error);
-        return [];
-    }
-}
-
-export async function getAllLoadedObjects() {
-    const viewer = getViewer();
-    if (!viewer) {
-        return [];
-    }
-
-    try {
-        const modelGroups = await viewer.getObjects();
-        const validGroups = (modelGroups ?? [])
-            .map(group => ({
-                modelId: group?.modelId,
-                runtimeIds: getRuntimeIds(group)
-            }))
-            .filter(group =>
-                isNonEmptyString(group.modelId) && group.runtimeIds.length > 0
-            );
-
-        const results = await mapWithConcurrency(
-            validGroups,
-            MODEL_CONCURRENCY,
-            async group => ({
-                modelId: group.modelId,
-                runtimeIds: group.runtimeIds,
-                objects: await getObjectPropertiesInBatches(
-                    group.modelId,
-                    group.runtimeIds
-                )
-            })
-        );
-
-        const objectCount = results.reduce(
-            (total, result) => total + result.objects.length,
-            0
-        );
-
-        console.info(
-            `[Trimble Objects] Retrieved ${objectCount} objects from ${results.length} model(s).`
-        );
-
-        return results;
-    } catch (error) {
-        console.error("[Trimble Objects] Failed to retrieve objects:", error);
-        return [];
-    }
-}
-
-/**
- * Applies colors to multiple viewer objects in one call.
- *
- * Expects the shape:
- * {
- *   data: {
- *     elements: [
- *       { sourceId: "<ifcGuid>", versionId: "<modelId>", color: "#E67C73" }
- *     ]
- *   }
- * }
- *
- * `color` may be given as a "#RRGGBB" / "RRGGBB" hex string, or already as
- * an { r, g, b } object - both are accepted.
- */
-export async function setElementColors(payload) {
-    const viewer = getViewer();
-    if (!viewer) {
-        console.warn("[Trimble Colors] Viewer is not connected yet.");
-        return;
-    }
-
-    const elements = payload?.data?.elements ?? payload?.elements ?? [];
-
-    if (!Array.isArray(elements) || elements.length === 0) {
-        return;
-    }
-
-    const byModel = new Map();
-
-    for (const element of elements) {
-        const modelId = element?.versionId;
-        const sourceId = element?.sourceId;
-
-        if (!isNonEmptyString(modelId) || !isNonEmptyString(sourceId)) {
-            console.warn(
-                "[Trimble Colors] Skipping element with missing sourceId/versionId:",
-                element
-            );
-            continue;
-        }
-
-        if (!byModel.has(modelId)) {
-            byModel.set(modelId, []);
-        }
-
-        byModel.get(modelId).push(element);
-    }
-
-    await mapWithConcurrency(
-        [...byModel.entries()],
-        MODEL_CONCURRENCY,
-        ([modelId, modelElements]) =>
-            applyColorsForModel(viewer, modelId, modelElements)
-    );
-}
-
-async function applyColorsForModel(viewer, modelId, elements) {
-    const sourceIds = elements.map(element => element.sourceId);
-
-    let runtimeIds;
-
-    try {
-        runtimeIds = await viewer.convertToObjectRuntimeIds(
-            modelId,
-            sourceIds
-        );
-    } catch (error) {
-        console.error(
-            `[Trimble Colors] Failed to resolve runtime IDs for model ${modelId}:`,
-            error
-        );
-        return;
-    }
-
-    // Group objects by their target color so objects sharing a color are
-    // sent to the viewer in a single setObjectState call.
-    const byColor = new Map();
-
-    elements.forEach((element, index) => {
-        const runtimeId = runtimeIds?.[index];
-
-        if (!Number.isInteger(runtimeId)) {
-            console.warn(
-                `[Trimble Colors] No runtime ID found for source ID '${element.sourceId}' in model ${modelId}.`
-            );
-            return;
-        }
-
-        let rgb;
-
-        try {
-            rgb = normalizeColor(element.color);
-        } catch (error) {
-            console.warn(
-                `[Trimble Colors] Skipping '${element.sourceId}': ${error.message}`
-            );
-            return;
-        }
-
-        const colorKey = `${rgb.r},${rgb.g},${rgb.b}`;
-
-        if (!byColor.has(colorKey)) {
-            byColor.set(colorKey, { rgb, runtimeIds: [] });
-        }
-
-        byColor.get(colorKey).runtimeIds.push(runtimeId);
-    });
-
-    for (const { rgb, runtimeIds: idsForColor } of byColor.values()) {
-        try {
-            await viewer.setObjectState(
-                {
-                    modelObjectIds: [
-                        { modelId, objectRuntimeIds: idsForColor }
-                    ]
-                },
-                {
-                    color: { r: rgb.r, g: rgb.g, b: rgb.b, a: 255 }
-                }
-            );
-        } catch (error) {
-            console.error(
-                `[Trimble Colors] Failed to set color for model ${modelId}:`,
-                error
-            );
-        }
-    }
-}
-
-/**
- * Converts a hex color string (e.g. "#E67C73", "e67c73", "#fff") into
- * an { r, g, b } object with 0-255 integer channel values.
- */
-function hexToRgb(hex) {
-    const normalized = hex.trim().replace(/^#/, "");
-
-    const expanded = normalized.length === 3
-        ? normalized.split("").map(char => char + char).join("")
-        : normalized;
-
-    if (!/^[0-9a-fA-F]{6}$/.test(expanded)) {
-        throw new Error(`Invalid hex color: "${hex}"`);
-    }
-
-    return {
-        r: parseInt(expanded.slice(0, 2), 16),
-        g: parseInt(expanded.slice(2, 4), 16),
-        b: parseInt(expanded.slice(4, 6), 16)
-    };
-}
-
-/** Accepts either a hex string or an { r, g, b } object and returns { r, g, b }. */
-function normalizeColor(color) {
-    if (typeof color === "string") {
-        return hexToRgb(color);
-    }
-
-    if (
-        color &&
-        typeof color === "object" &&
-        Number.isFinite(color.r) &&
-        Number.isFinite(color.g) &&
-        Number.isFinite(color.b)
-    ) {
-        return { r: color.r, g: color.g, b: color.b };
-    }
-
-    throw new TypeError(
-        "color must be a hex string (e.g. \"#E67C73\") or an {r, g, b} object"
-    );
-}
-
-function getRuntimeIds(modelGroup) {
-    return [
-        ...new Set(
-            (modelGroup?.objects ?? [])
-                .map(object => object?.id)
-                .filter(Number.isInteger)
-        )
-    ];
-}
-
-async function getObjectPropertiesInBatches(
-    modelId,
-    runtimeIds,
-    batchSize = PROPERTY_BATCH_SIZE
-) {
-    const viewer = getViewer();
-    if (!viewer || runtimeIds.length === 0) {
-        return [];
-    }
-
-    const batches = chunk(runtimeIds, batchSize);
-
-    const batchResults = await mapWithConcurrency(
-        batches,
-        PROPERTY_BATCH_CONCURRENCY,
-        async batch => {
-            try {
-                const properties = await viewer.getObjectProperties(
-                    modelId,
-                    batch
-                );
-
-                return Array.isArray(properties) ? properties : [];
-            } catch (error) {
-                console.error(
-                    `[Trimble Objects] Property batch failed for model ${modelId}:`,
-                    error
-                );
-                return [];
-            }
-        }
-    );
-
-    return batchResults.flat();
-}
-
-async function flattenModelObjects(modelId, objects) {
-    const runtimeIds = objects
-        .map(object => object?.id)
-        .filter(Number.isInteger);
-
-    const guidMap = await getIfcGuidsByRuntimeId(modelId, runtimeIds);
-
-
-    return objects.map(object =>
-        flattenTrimbleObject(
-            modelId,
-            object,
-            guidMap.get(object.id) ?? null
-        )
-    );
-}
-
-async function getIfcGuidsByRuntimeId(
-    modelId,
-    runtimeIds,
-    batchSize = GUID_BATCH_SIZE
-) {
-    const guidMap = new Map();
-    const batches = chunk(runtimeIds, batchSize);
-
-    await mapWithConcurrency(
-        batches,
-        GUID_BATCH_CONCURRENCY,
-        batch => resolveGuidBatch(modelId, batch, guidMap)
-    );
-
-    return guidMap;
-}
-
-async function resolveGuidBatch(modelId, runtimeIds, guidMap) {
-    if (runtimeIds.length === 0) {
-        return;
-    }
-
-    const viewer = getViewer();
-    if (!viewer) {
-        return;
-    }
-
-    try {
-        const ifcGuids = await viewer.convertToObjectIds(
-            modelId,
-            runtimeIds
-        );
-
-        runtimeIds.forEach((runtimeId, index) => {
-            const ifcGuid = ifcGuids?.[index];
-            if (!ifcGuid) {
-                return;
-            }
-
-            guidMap.set(runtimeId, ifcGuid);
-        });
-    } catch (error) {
-        if (runtimeIds.length === 1) {
-            return;
-        }
-
-        const middle = Math.floor(runtimeIds.length / 2);
-
-        await Promise.all([
-            resolveGuidBatch(modelId, runtimeIds.slice(0, middle), guidMap),
-            resolveGuidBatch(modelId, runtimeIds.slice(middle), guidMap)
-        ]);
-    }
-}
-
-function flattenTrimbleObject(modelId, object, ifcGuid = null) {
-    const flattened = {
-        modelId,
-        ifcGuid,
-        runtimeId: object.id,
-        class: object.class ?? "Unknown",
-        positionX: object.position?.x ?? 0,
-        positionY: object.position?.y ?? 0,
-        positionZ: object.position?.z ?? 0
-    };
-    for (const propertySet of object.properties ?? []) {
-        for (const property of propertySet.properties ?? []) {
-            if (property?.name && IFC_OBJECT_JSON_PROPERTY_NAMES.has(property.name)) {
-                flattened[property.name] = property.value;
-            }
-        }
-    }
-    return flattened;
-}
-
-/** Currently unused (kept from the pre-split file) - not called anywhere. */
-export function ifcGuidToUuid(ifcGuid) {
-    if (!isNonEmptyString(ifcGuid)) {
-        throw new Error("IFC GUID must be a non-empty string.");
-    }
-
-    const ifcCharacters =
-        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$";
-
-    let number = 0n;
-
-    for (const character of ifcGuid) {
-        const index = ifcCharacters.indexOf(character);
-
-        if (index === -1) {
-            throw new Error(`Invalid IFC GUID character: ${character}`);
-        }
-
-        number = number * 64n + BigInt(index);
-    }
-
-    const hex = number.toString(16).padStart(32, "0");
-
-    return [
-        hex.slice(0, 8),
-        hex.slice(8, 12),
-        hex.slice(12, 16),
-        hex.slice(16, 20),
-        hex.slice(20)
-    ].join("-");
-}
-
-function chunk(items, size) {
-    const chunks = [];
-
-    for (let index = 0; index < items.length; index += size) {
-        chunks.push(items.slice(index, index + size));
-    }
-
-    return chunks;
-}
-
-async function mapWithConcurrency(items, concurrency, mapper) {
-    if (items.length === 0) {
-        return [];
-    }
-
-    const results = new Array(items.length);
-    let nextIndex = 0;
-
-    const workers = Array.from(
-        { length: Math.min(concurrency, items.length) },
-        async () => {
-            while (true) {
-                const currentIndex = nextIndex++;
-
-                if (currentIndex >= items.length) {
-                    return;
-                }
-
-                results[currentIndex] = await mapper(
-                    items[currentIndex],
-                    currentIndex
-                );
-            }
-        }
-    );
-
-    await Promise.all(workers);
-    return results;
-}
-
-function isNonEmptyString(value) {
-    return typeof value === "string" && value.trim().length > 0;
-}
-
