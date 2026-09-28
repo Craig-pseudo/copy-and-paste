@@ -1,39 +1,99 @@
-private List<LeftAside.MemberSummary> _members = new()
-{
-    new()
-    {
-        Guid = Guid.Parse("4fec0fcb-4002-4f0e-b2fd-37073501040d"),
-        Name = "Beam Loss",
-        LengthMm = 8598,
-        WidthMm = 60,
-        HeightMm = 60,
-        NetSurfaceAreaM2 = 2.06,
-        AreaPerTonM2 = 43.01,
-        VolumeM3 = 0.01,
-        WeightT = 0.047
-    },
-    new()
-    {
-        Guid = Guid.Parse("969a6149-13ad-49e3-8369-6f2bd4c4c557"),
-        Name = "Web Section Loss",
-        LengthMm = 1228,
-        WidthMm = 55,
-        HeightMm = 120,
-        NetSurfaceAreaM2 = 0.54,
-        AreaPerTonM2 = 32.66,
-        VolumeM3 = 0,
-        WeightT = 0.016
-    },
-    new()
-    {
-        Guid = Guid.Parse("84877aa1-443a-496f-b5e2-fece48feb460"),
-        Name = "Web Section Loss 2",
-        LengthMm = 1228,
-        WidthMm = 55,
-        HeightMm = 120,
-        NetSurfaceAreaM2 = 0.54,
-        AreaPerTonM2 = 32.66,
-        VolumeM3 = 0,
-        WeightT = 0.016
-    }
-};
+[Trimble] selectTrimbleObject called 
+Object
+trimble.js:744
+ [ParaMatic] Failed to select IFC GUID 1Fx0$BG09F3hBzDmSr0GGD. TypeError: Cannot read properties of null (reading 'viewer')
+    at Module.selectTrimbleObject (trimble.js:659:32)
+    at b.processJSCall (blazor.web.js:1:4448)
+    at b.beginInvokeJSFromDotNet (blazor.web.js:1:4125)
+    at kn._invokeClientMethod (blazor.web.js:1:69348)
+    at kn._processIncomingData (blazor.web.js:1:66713)
+    at connection.onreceive (blazor.web.js:1:60364)
+    at i.onmessage (blazor.web.js:1:84422)
+selectTrimbleObject	@	trimble.js:744
+trimble.js:630 [Trimble] selectTrimbleObject called 
+Object
+trimble.js:744
+ [ParaMatic] Failed to select IFC GUID 24XtgXH3f9RxNY$iv8$hHW. TypeError: Cannot read properties of null (reading 'viewer')
+    at Module.selectTrimbleObject (trimble.js:659:32)
+    at b.processJSCall (blazor.web.js:1:4448)
+    at b.beginInvokeJSFromDotNet (blazor.web.js:1:4125)
+    at kn._invokeClientMethod (blazor.web.js:1:69348)
+    at kn._processIncomingData (blazor.web.js:1:66713)
+    at connection.onreceive (blazor.web.js:1:60364)
+    at i.onmessage (blazor.web.js:1:84422)
+selectTrimbleObject	@	trimble.js:744
+trimbleDashboard.1of28yqex6.js:126
+ [ParaMatic] Embedded viewer initialization failed. TypeError: Cannot read properties of undefined (reading 'replace')
+initializeViewer	@	trimbleDashboard.1of28yqex6.js:126
+index.js:391
+ [aaip-iframe-sdk] requestMcpAppOpenLinkHandlerRegistration timed out without a response. Timeout value was 5000ms
+(anonymous)	@	index.js:391
+trimble.js:630 [Trimble] selectTrimbleObject called 
+Object
+trimble.js:744
+ [ParaMatic] Failed to select IFC GUID 2Mcc594wr9uuDfRolKnCLN. TypeError: Cannot read properties of null (reading 'viewer')
+    at Module.selectTrimbleObject (trimble.js:659:32)
+    at b.processJSCall (blazor.web.js:1:4448)
+    at b.beginInvokeJSFromDotNet (blazor.web.js:1:4125)
+    at kn._invokeClientMethod (blazor.web.js:1:69348)
+    at kn._processIncomingData (blazor.web.js:1:66713)
+    at connection.onreceive (blazor.web.js:1:60364)
+    at i.onmessage (blazor.web.js:1:84422)
+selectTrimbleObject	@	trimble.js:744
+trimble.js:630 [Trimble] selectTrimbleObject called 
+Object
+trimble.js:744
+ [ParaMatic] Failed to select IFC GUID 24XtgXH3f9RxNY$iv8$hHW. TypeError: Cannot read properties of null (reading 'viewer')
+    at Module.selectTrimbleObject (trimble.js:659:32)
+    at b.processJSCall (blazor.web.js:1:4448)
+    at b.beginInvokeJSFromDotNet (blazor.web.js:1:4125)
+    at kn._invokeClientMethod (blazor.web.js:1:69348)
+    at kn._processIncomingData (blazor.web.js:1:66713)
+    at connection.onreceive (blazor.web.js:1:60364)
+    at i.onmessage (blazor.web.js:1:84422)
+selectTrimbleObject	@	trimble.js:744
+trimble.js:630 [Trimble] selectTrimbleObject called 
+Object
+trimble.js:744
+ [ParaMatic] Failed to select IFC GUID 1Fx0$BG09F3hBzDmSr0GGD. TypeError: Cannot read properties of null (reading 'viewer')
+    at Module.selectTrimbleObject (trimble.js:659:32)
+    at b.processJSCall (blazor.web.js:1:4448)
+    at b.beginInvokeJSFromDotNet (blazor.web.js:1:4125)
+    at kn._invokeClientMethod (blazor.web.js:1:69348)
+    at kn._processIncomingData (blazor.web.js:1:66713)
+    at connection.onreceive (blazor.web.js:1:60364)
+    at i.onmessage (blazor.web.js:1:84422)
+selectTrimbleObject	@	trimble.js:744
+trimbleDashboard.1of28yqex6.js:126
+ [ParaMatic] Embedded viewer initialization failed. TypeError: Cannot read properties of undefined (reading 'replace')
+initializeViewer	@	trimbleDashboard.1of28yqex6.js:126
+trimbleWorkspace.js:520 [ParaMatic] Viewer event: viewer.onCameraChanged 
+Object
+3d?modelId=1eTmwOzuWLw:1
+ [.WebGL-0x3bb400d73000] GL_INVALID_FRAMEBUFFER_OPERATION: glBlitFramebuffer: Framebuffer is incomplete: Attachment has zero size.
+trimbleWorkspace.js:520 [ParaMatic] Viewer event: viewer.onCameraChanged 
+{data: {…}}
+trimbleDashboard.1of28yqex6.js:126
+ [ParaMatic] Embedded viewer initialization failed. TypeError: Cannot read properties of undefined (reading 'replace')
+initializeViewer	@	trimbleDashboard.1of28yqex6.js:126
+await in initializeViewer		
+processJSCall	@	blazor.web.9hsif5t8mt.js:1
+beginInvokeJSFromDotNet	@	blazor.web.9hsif5t8mt.js:1
+_invokeClientMethod	@	blazor.web.9hsif5t8mt.js:1
+_processIncomingData	@	blazor.web.9hsif5t8mt.js:1
+connection.onreceive	@	blazor.web.9hsif5t8mt.js:1
+i.onmessage	@	blazor.web.9hsif5t8mt.js:1
+trimbleWorkspace.js:520 [ParaMatic] Viewer event: viewer.onCameraChanged 
+{data: {…}}
+ App This is the master tab.
+8
+trimbleDashboard.1of28yqex6.js:126
+ [ParaMatic] Embedded viewer initialization failed. TypeError: Cannot read properties of undefined (reading 'replace')
+initializeViewer	@	trimbleDashboard.1of28yqex6.js:126
+await in initializeViewer		
+processJSCall	@	blazor.web.9hsif5t8mt.js:1
+beginInvokeJSFromDotNet	@	blazor.web.9hsif5t8mt.js:1
+_invokeClientMethod	@	blazor.web.9hsif5t8mt.js:1
+_processIncomingData	@	blazor.web.9hsif5t8mt.js:1
+connection.onreceive	@	blazor.web.9hsif5t8mt.js:1
+i.onmessage	@	blazor.web.9hsif5t8mt.js:1
