@@ -1,26 +1,37 @@
-try {
-    if (!getWorkspaceApi()) {
-        await loadEmbeddedViewerIframe(iframeElement);
-        console.log("[ParaMatic] step: connect");
-        setWorkspaceApi(await window.TrimbleConnectWorkspace.connect(
-            iframeElement, handleViewerEvent, 30000));
-    }
-
-    const workspaceAPI = getWorkspaceApi();
-
-    console.log("[ParaMatic] step: setTokens");
-    const tokenAccepted = await workspaceAPI.embed.setTokens({ accessToken });
-    if (!tokenAccepted) { console.error("[ParaMatic] token rejected."); return false; }
-
-    console.log("[ParaMatic] step: init3DViewer", { projectId, modelId });
-    await workspaceAPI.embed.init3DViewer({ projectId, modelId });
-
-    console.log("[ParaMatic] step: setUI");
-    await workspaceAPI.ui.setUI({ name: "SidePanel", state: "hidden" });
-
-    console.log("[ParaMatic] step: done");
-    return true;
-} catch (error) {
-    console.error("[ParaMatic] Embedded viewer initialization failed.", error);
-    return false;
-}
+[ParaMatic] Viewer event: viewer.onModelStateChanged 
+{data: {…}}
+trimbleWorkspace.js:560 [ParaMatic] viewer.onModelStateChanged: 
+{data: {…}}
+trimbleWorkspace.js:569 [ParaMatic] Model state: loaded
+trimbleWorkspace.js:104 Trimble viewer event: viewer.onCameraChanged 
+{position: {…}, lookAt: {…}, upDirection: {…}, quaternion: {…}, pitch: 1.2765476016896273, …}
+trimbleDashboard.1of28yqex6.js:126
+ [ParaMatic] Embedded viewer initialization failed. TypeError: Cannot read properties of undefined (reading 'replace')
+initializeViewer	@	trimbleDashboard.1of28yqex6.js:126
+await in initializeViewer		
+processJSCall	@	blazor.web.9hsif5t8mt.js:1
+beginInvokeJSFromDotNet	@	blazor.web.9hsif5t8mt.js:1
+_invokeClientMethod	@	blazor.web.9hsif5t8mt.js:1
+_processIncomingData	@	blazor.web.9hsif5t8mt.js:1
+connection.onreceive	@	blazor.web.9hsif5t8mt.js:1
+i.onmessage	@	blazor.web.9hsif5t8mt.js:1
+trimbleWorkspace.ddk461h599.js:510 [ParaMatic] Viewer event: viewer.onCameraChanged 
+{data: {…}}
+trimbleWorkspace.js:104 Trimble viewer event: viewer.onModelStateChanged 
+{id: '1eTmwOzuWLw', versionId: '1eTmwOzuWLw', isLatestVersion: true, name: 'C302_26_RCL_BOB (1) (1).tekla', state: 'loaded', …}
+trimbleWorkspace.ddk461h599.js:510 [ParaMatic] Viewer event: viewer.onModelStateChanged 
+{data: {…}}
+trimbleWorkspace.ddk461h599.js:550 [ParaMatic] viewer.onModelStateChanged: 
+{data: {…}}
+trimbleWorkspace.ddk461h599.js:559 [ParaMatic] Model state: loaded
+5
+trimbleDashboard.1of28yqex6.js:126
+ [ParaMatic] Embedded viewer initialization failed. TypeError: Cannot read properties of undefined (reading 'replace')
+initializeViewer	@	trimbleDashboard.1of28yqex6.js:126
+await in initializeViewer		
+processJSCall	@	blazor.web.9hsif5t8mt.js:1
+beginInvokeJSFromDotNet	@	blazor.web.9hsif5t8mt.js:1
+_invokeClientMethod	@	blazor.web.9hsif5t8mt.js:1
+_processIncomingData	@	blazor.web.9hsif5t8mt.js:1
+connection.onreceive	@	blazor.web.9hsif5t8mt.js:1
+i.onmessage	@	blazor.web.9hsif5t8mt.js:1
