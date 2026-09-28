@@ -1,37 +1,16 @@
-[ParaMatic] Viewer event: viewer.onModelStateChanged 
-{data: {…}}
-trimbleWorkspace.js:560 [ParaMatic] viewer.onModelStateChanged: 
-{data: {…}}
-trimbleWorkspace.js:569 [ParaMatic] Model state: loaded
-trimbleWorkspace.js:104 Trimble viewer event: viewer.onCameraChanged 
-{position: {…}, lookAt: {…}, upDirection: {…}, quaternion: {…}, pitch: 1.2765476016896273, …}
-trimbleDashboard.1of28yqex6.js:126
- [ParaMatic] Embedded viewer initialization failed. TypeError: Cannot read properties of undefined (reading 'replace')
-initializeViewer	@	trimbleDashboard.1of28yqex6.js:126
-await in initializeViewer		
-processJSCall	@	blazor.web.9hsif5t8mt.js:1
-beginInvokeJSFromDotNet	@	blazor.web.9hsif5t8mt.js:1
-_invokeClientMethod	@	blazor.web.9hsif5t8mt.js:1
-_processIncomingData	@	blazor.web.9hsif5t8mt.js:1
-connection.onreceive	@	blazor.web.9hsif5t8mt.js:1
-i.onmessage	@	blazor.web.9hsif5t8mt.js:1
-trimbleWorkspace.ddk461h599.js:510 [ParaMatic] Viewer event: viewer.onCameraChanged 
-{data: {…}}
-trimbleWorkspace.js:104 Trimble viewer event: viewer.onModelStateChanged 
-{id: '1eTmwOzuWLw', versionId: '1eTmwOzuWLw', isLatestVersion: true, name: 'C302_26_RCL_BOB (1) (1).tekla', state: 'loaded', …}
-trimbleWorkspace.ddk461h599.js:510 [ParaMatic] Viewer event: viewer.onModelStateChanged 
-{data: {…}}
-trimbleWorkspace.ddk461h599.js:550 [ParaMatic] viewer.onModelStateChanged: 
-{data: {…}}
-trimbleWorkspace.ddk461h599.js:559 [ParaMatic] Model state: loaded
-5
-trimbleDashboard.1of28yqex6.js:126
- [ParaMatic] Embedded viewer initialization failed. TypeError: Cannot read properties of undefined (reading 'replace')
-initializeViewer	@	trimbleDashboard.1of28yqex6.js:126
-await in initializeViewer		
-processJSCall	@	blazor.web.9hsif5t8mt.js:1
-beginInvokeJSFromDotNet	@	blazor.web.9hsif5t8mt.js:1
-_invokeClientMethod	@	blazor.web.9hsif5t8mt.js:1
-_processIncomingData	@	blazor.web.9hsif5t8mt.js:1
-connection.onreceive	@	blazor.web.9hsif5t8mt.js:1
-i.onmessage	@	blazor.web.9hsif5t8mt.js:1
+export {
+    setElementColors,
+    selectUnmatchedTrimbleObjects,
+    selectTrimbleObject,
+    clearViewerSelection,
+    getAllFlattenedObjects,
+    getAllLoadedObjects,
+    getFlattenedObjectByRuntimeId,
+    getSelection,
+    zoomToSelection,
+    ifcGuidToUuid,
+    setViewerDotNetReference,
+    setWorkspaceApi,
+    getWorkspaceApi,
+    handleViewerEvent
+} from "./trimbleWorkspace.js";
