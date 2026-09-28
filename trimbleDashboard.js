@@ -3,7 +3,7 @@ import {
     setWorkspaceApi,
     getWorkspaceApi,
     handleViewerEvent,
-    dispose as disposeSharedViewer
+    disposeViewer as disposeSharedViewer
 } from "./trimbleWorkspace.js";
 
 import { openViewerPopup, initialize, requestAccessToken, dispose } from "./trimbleAuth.js";
@@ -15,21 +15,24 @@ import { openViewerPopup, initialize, requestAccessToken, dispose } from "./trim
  * TrimbleModulePath points at. An imported-but-not-re-exported
  * binding is not reachable that way - it has to be a genuine export
  * of *this* file.
+ *
+ * This block being commented out was why every Blazor call into
+ * selectTrimbleObject / getFlattenedObjectByRuntimeId / etc. failed.
  */
-// export {
-//     setElementColors,
-//     selectUnmatchedTrimbleObjects,
-//     selectTrimbleObject,
-//     clearViewerSelection,
-//     getAllFlattenedObjects,
-//     // getAllLoadedObjects,
-//     getFlattenedObjectByRuntimeId,
-//     getSelection,
-//     zoomToSelection
-// } from "./trimbleWorkspace.js";
+export {
+    setElementColors,
+    selectUnmatchedTrimbleObjects,
+    selectTrimbleObject,
+    clearViewerSelection,
+    getAllFlattenedObjects,
+    // getAllLoadedObjects,
+    getFlattenedObjectByRuntimeId,
+    getSelection,
+    zoomToSelection
+} from "./trimbleWorkspace.js";
 
 export { openViewerPopup, initialize, requestAccessToken, dispose };
- 
+
 /**
  * Initializes the embedded Trimble Connect viewer.
  *
@@ -213,27 +216,6 @@ async function loadEmbeddedViewerIframe(iframeElement) {
 }
 
 /**
- * Highlights an object in the embedded 3D viewer by its GUID (MS).
- *
- * PLACEHOLDER: the real Trimble viewer selection call still needs to
- * be confirmed and wired in here. Right now this only logs what it
- * would do, so clicking a member in the list won't error out, but it
- * also won't actually select anything in the model yet.
- */
-export async function selectObjectByGuid(guid) {
-    const workspaceAPI = getWorkspaceApi();
-
-    if (!workspaceAPI) {
-        console.warn("[ParaMatic] selectObjectByGuid: no active viewer connection.");
-        return false;
-    }
-
-    console.log(`[ParaMatic] selectObjectByGuid called for ${guid} - selection call not implemented yet.`);
-
-    return false;
-}
-
-/**
  * Refreshes the OAuth token.
  */
 export async function refreshToken(accessToken) {
@@ -262,10 +244,14 @@ export async function refreshToken(accessToken) {
  *
  * Called from TrimbleDashboard.razor when that component is disposed
  * (e.g. navigating away from the dashboard tab). Unlike
- * trimble-extension.js's dispose(), this does not clear the outer
- * extension connection (`api`, `dotNetReference`, `cachedAccessToken`)
- * since the extension shell (TrimbleExtension.razor) may still be
- * mounted and connected.
+ * trimbleAuth.js's dispose(), this does not clear the outer extension
+ * connection (`api`, `dotNetReference`, `cachedAccessToken`) since
+ * the extension shell (TrimbleExtension.razor) may still be mounted
+ * and connected.
+ *
+ * Note this imports trimbleWorkspace's disposeViewer, NOT its
+ * dispose - the latter tears down the extension shell and leaves the
+ * viewer connection alive, which is backwards.
  */
 export function disposeViewer() {
     disposeSharedViewer();
@@ -328,4 +314,3 @@ window.trendChart = {
         return element.getBoundingClientRect().width;
     }
 };
-
